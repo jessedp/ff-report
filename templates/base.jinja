@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fantasy Football Weekly Report{% endblock %}</title>
+    <style>
+        html {
+            max-width: 70ch;
+            padding: 3em 1em;
+            margin: auto;
+            line-height: 1.75;
+            font-size: 1em;
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #333;
+        }
+        img.logo {
+            width: 4ch;
+            height: 4ch;
+            padding-right: 5px;
+            vertical-align: middle;
+        }
+        .section {
+            margin-bottom: 2.5em;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 0.5em;
+        }
+        hr {
+            margin: 0.5em 0 1em 0;
+            border: 0;
+            height: 1px;
+            background: #ccc;
+        }
+        .clown {
+            color: #ff5722;
+        }
+        .dead {
+            color: #9c27b0;
+        }
+        .legend {
+            font-style: italic;
+            font-size: 0.9em;
+            margin-top: 1em;
+        }
+        
+        /* Flex layouts */
+        .flex-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 0.5em;
+        }
+        .flex-column {
+            display: flex;
+            flex-direction: column;
+        }
+        .flex-grow {
+            flex-grow: 1;
+        }
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        /* Box score */
+        .box-score-header {
+            font-weight: bold;
+            margin-bottom: 1em;
+        }
+        .matchup-row {
+            margin-bottom: 0.5em;
+            border-bottom: 1px solid #ccc;
+        }
+        .team-score {
+            flex: 2;
+            white-space: nowrap;
+        }
+        .vs-symbol {
+            flex: 1;
+            padding: 0 0.5em;
+        }
+        .score-details-row {
+            display: flex;
+            margin-left: 2em;
+            margin-top: 0.0em;
+        }
+        .score-details-label {
+            width: 3em;
+        }
+        .score-details-value {
+            flex: 1;
+        }
+        .score-details-value.second {
+            margin-left: 6em;
+        }
+        
+        /* Standings table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 0.3em 0.5em;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table td {
+            padding: 0.1em 0.3em;
+        }
+        .data-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .division-icon {
+            margin-right: 0.3em;
+        }
+        
+        /* Team data */
+        .team-header {
+            display: flex;
+            align-items: center;
+            margin-top: 1.5em;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .position-grid {
+            display: grid;
+            grid-template-columns: 4em 4em auto;
+            gap: 0.5em;
+            margin: 0.5em 0 1em 1em;
+        }
+        .bench-header {
+            margin-top: 1em;
+            font-weight: bold;
+            grid-column: 1 / -1;
+        }
+        
+        /* Overview section */
+        .overview-section {
+            margin-left: 1em;
+        }
+        .overview-title {
+            font-weight: bold;
+            font-style: italic;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        .overview-item {
+            margin-bottom: 0.3em;
+        }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>

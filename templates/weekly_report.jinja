@@ -1,0 +1,339 @@
+{% extends "base.jinja" %}
+
+{% block title %}{{ year }} NFL Week {{ week }} Fantasy Report{% endblock %}
+
+{% block content %}
+<h1>{{ year }} NFL Week {{ week }}</h1>
+
+<!-- Box Score Section -->
+<div class="section">
+    <div class="section-title">Box Score</div>
+    <hr>
+    <div class="box-score">
+        <div class="box-score-header flex-row">
+            <div class="flex-grow">Won</div>
+            <div class="flex-grow">&nbsp;</div>
+            <div class="flex-grow">Lost</div>
+        </div>
+
+        {% for matchup in matchups %}
+        <div class="matchup-row">
+            {% if matchup.winner == "home" %}
+            <div class="flex-row">
+                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+                </div>
+                <div class="vs-symbol">def.</div>
+                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
+                </div>
+            </div>
+            <div class="score-details-row">
+                <div class="score-details-label">MAX:</div>
+                <div class="score-details-value">{{ matchup.home_team.max_score|format_score }}</div>
+                <div class="score-details-value second">{{ matchup.away_team.max_score|format_score }}{% if
+                    matchup.lost_could_win %} <strong class="dead">💀💀💀</strong>{% endif %}</div>
+            </div>
+            <div class="score-details-row">
+                <div class="score-details-label">BEN:</div>
+                <div class="score-details-value">{{ matchup.home_team.bench|format_score }}{% if
+                    matchup.home_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
+                <div class="score-details-value second">{{ matchup.away_team.bench|format_score }}{% if
+                    matchup.away_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
+            </div>
+            {% elif matchup.winner == "away" %}
+            <div class="flex-row">
+                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
+                </div>
+                <div class="vs-symbol">def.</div>
+                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+                </div>
+            </div>
+            <div class="score-details-row">
+                <div class="score-details-label">MAX:</div>
+                <div class="score-details-value">{{ matchup.away_team.max_score|format_score }}</div>
+                <div class="score-details-value second">{{ matchup.home_team.max_score|format_score }}{% if
+                    matchup.lost_could_win %} <strong class="dead">💀💀💀</strong>{% endif %}</div>
+            </div>
+            <div class="score-details-row">
+                <div class="score-details-label">BEN:</div>
+                <div class="score-details-value">{{ matchup.away_team.bench|format_score }}{% if
+                    matchup.away_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
+                <div class="score-details-value second">{{ matchup.home_team.bench|format_score }}{% if
+                    matchup.home_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
+            </div>
+            {% else %}
+            <div class="flex-row">
+                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+                </div>
+                <div class="vs-symbol">=</div>
+                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="legend">
+            <div>🤡🤡🤡 = <em>Team's bench outscored starters</em></div>
+            <div>💀💀💀 = <em>Team that lost could have won</em></div>
+            <div><em>MAX = Maximum possible score</em></div>
+            <div><em>BEN = Total points left on the bench</em></div>
+        </div>
+    </div>
+</div>
+
+<!-- League Standings Section -->
+<div class="section">
+    <div class="section-title">League Standings</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Record</th>
+                <th>Div</th>
+                <th>Team</th>
+                <th class="text-right">PF</th>
+                <th class="text-right">PA</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in standings %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ team.wins }} - {{ team.losses }}</td>
+                <td><em>{{ div_images[team.division_name[:1]]|safe }}</em></td>
+                <td>{{ team.team_abbrev }} {{ team.team_name }}</td>
+                <td class="text-right">{{ team.points_for|format_score }}</td>
+                <td class="text-right">{{ team.points_against|format_score }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="legend">
+        <div><em>{{ div_images['F']|safe }} = Fireball division</em></div>
+        <div><em>{{ div_images['J']|safe }} = Jager division</em></div>
+    </div>
+</div>
+
+<!-- Power Rankings Section -->
+<div class="section">
+    <div class="section-title">Power Rankings</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Score</th>
+                <th>Div</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rank in power_rankings %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ rank[0]|format_score }}</td>
+                <td><em>{{ div_images[rank[1].division_name[:1]]|safe }}</em></td>
+                <td>{{ rank[1].team_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="legend">
+        <div><em>{{ div_images['F']|safe }} = Fireball division</em></div>
+        <div><em>{{ div_images['J']|safe }} = Jager division</em></div>
+        <div><em>Calculated using two step dominance, whatever that is. <a
+                    href='https://github.com/cwendt94/espn-api/blob/master/espn_api/football/league.py#L230'
+                    target='_new'>code</a></em></div>
+    </div>
+</div>
+
+<!-- League Overview Section -->
+<div class="section">
+    <div class="section-title">League Overview</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th colspan=3>Week</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Highest scoring week</td>
+                <td>{{ top_week[0].team_name }}</td>
+                <td>{{ top_week[1]|round(2) }}</td>
+            </tr>
+            <tr>
+                <td>Lowest scoring week</td>
+                <td>{{ low_week[0].team_name }}</td>
+                <td>{{ low_week[1]|round(2) }}</td>
+            </tr>
+        </tbody>
+        <thead>
+            <tr>
+                <th colspan=3>Season</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Top Scorer</td>
+                <td>{{ top_scorer.team_name }}</td>
+                <td>{{ top_scorer.points_for|round(2) }}</td>
+            </tr>
+            <tr>
+                <td>Low Scorer</td>
+                <td>{{ low_scorer.team_name }}</td>
+                <td>{{ low_scorer.points_for|round(2) }}</td>
+            </tr>
+            <tr>
+                <td>Most Points Against</td>
+                <td>{{ most_pa.team_name }}</td>
+                <td>{{ most_pa.points_against|round(2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Weekly Scores Section -->
+<div class="section">
+    <div class="section-title">Weekly Scores</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Score</th>
+                <th>Result</th>
+                <th>Div</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in weekly_scores %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ score.score|format_score }}</td>
+                <td>{% if score.won %}W{% else %}L{% endif %}</td>
+                <td>{{ div_images[score.division]|safe }}</td>
+                <td>{{ score.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Weekly Bench Scores Section -->
+<div class="section">
+    <div class="section-title">Weekly Bench Scores</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Bench Score</th>
+                <th>Result</th>
+                <th>Div</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in weekly_scores|sort(attribute='bench_score', reverse=True) %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ score.bench_score|format_score }}</td>
+                <td>{% if score.won %}W{% else %}L{% endif %}</td>
+                <td>{{ div_images[score.division]|safe }}</td>
+                <td>{{ score.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Points Per Player Per Position Section -->
+<div class="section">
+    <div class="section-title">Points Per Player Per Position</div>
+    <hr>
+    {% for matchup in matchups %}
+    <div class="team-header">
+        <img class='logo' src='{{ matchup.home_team.logo }}' />
+        <span>{{ matchup.home_team.name }}</span>
+    </div>
+    <hr>
+    {% set pppp = position_stats[matchup.home_team.name] %}
+    <div class="position-grid">
+        {% for pos in ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"] %}
+        <div>{{ pos }}:</div>
+        <div>
+            {% if pos in pppp %}({{ pppp[pos].count }}){% else %}(0){% endif %}
+        </div>
+        <div>
+            {% if pos in pppp %}
+            {% if pppp[pos].count == 1 %}
+            {{ pppp[pos].points|format_score }}
+            {% else %}
+            {{ pppp[pos].point_arr }} avg: {{ pppp[pos].avg|format_score }}
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="bench-header">BENCH</div>
+        {% for key in pppp|sort %}
+        {% if key.startswith("BE") %}
+        <div>{{ key }}:</div>
+        <div>({{ pppp[key].count }})</div>
+        <div>
+            {% if pppp[key].count == 1 %}
+            {{ pppp[key].points|format_score }}
+            {% else %}
+            {{ pppp[key].min|format_score }} / {{ pppp[key].avg|format_score }} / {{ pppp[key].max|format_score }}
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <div class="team-header">
+        <img class='logo' src='{{ matchup.away_team.logo }}' />
+        <span>{{ matchup.away_team.name }}</span>
+    </div>
+    <hr>
+    {% set pppp = position_stats[matchup.away_team.name] %}
+    <div class="position-grid">
+        {% for pos in ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"] %}
+        <div>{{ pos }}:</div>
+        <div>
+            {% if pos in pppp %}({{ pppp[pos].count }}){% else %}(0){% endif %}
+        </div>
+        <div>
+            {% if pos in pppp %}
+            {% if pppp[pos].count == 1 %}
+            {{ pppp[pos].points|format_score }}
+            {% else %}
+            {{ pppp[pos].point_arr }} avg: {{ pppp[pos].avg|format_score }}
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="bench-header">BENCH</div>
+        {% for key in pppp|sort %}
+        {% if key.startswith("BE") %}
+        <div>{{ key }}:</div>
+        <div>({{ pppp[key].count }})</div>
+        <div>
+            {% if pppp[key].count == 1 %}
+            {{ pppp[key].points|format_score }}
+            {% else %}
+            {{ pppp[key].min|format_score }} / {{ pppp[key].avg|format_score }} / {{ pppp[key].max|format_score }}
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
