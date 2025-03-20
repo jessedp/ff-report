@@ -93,3 +93,7 @@ You can customize the report by:
 2. Adjusting the CSS styles in the base template
 3. Adding new statistical calculations to `stats.py`
 4. Creating new report types in `reports.py`
+
+# Example
+
+![Alt text](images/sample.png)
