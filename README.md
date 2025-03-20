@@ -72,6 +72,14 @@ Weekly command options:
 --open, -p            Open the report in a browser after generation
 ```
 
+## Uninstall
+
+```
+pip uninstall fantasy-football-reports
+```
+
+The packages `setup.py` have to be removed individually.
+
 ## Project Structure
 
 - `ff/` - Main package directory
