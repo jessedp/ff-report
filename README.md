@@ -2,6 +2,10 @@
 
 A cleaner, more maintainable fantasy football reporting tool for ESPN leagues.
 
+## Requirements
+
+- Python 3.9+
+
 ## Features
 
 - Weekly reports with detailed statistics
@@ -18,7 +22,7 @@ A cleaner, more maintainable fantasy football reporting tool for ESPN leagues.
    ```
    pip install -e .
    ```
-3. Create a `.env` file with your ESPN API credentials (use `.env.example` as a template)
+3. Create a `.env` file with [your ESPN API credentials](https://github.com/cwendt94/espn-api/discussions/150#discussioncomment-133615) (use `.env.example` as a template)
 
 ## Usage
 
@@ -60,6 +64,7 @@ Commands:
 ```
 
 Weekly command options:
+
 ```
 --year, -y INTEGER    NFL season year to generate report for
 --week, -w INTEGER    NFL week to generate report for (0 for current week)
