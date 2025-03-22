@@ -18,11 +18,16 @@ A cleaner, more maintainable fantasy football reporting tool for ESPN leagues.
 ## Installation
 
 1. Clone this repository
-2. Install dependencies:
-   ```
-   pip install -e .
-   ```
-3. Create a `.env` file with [your ESPN API credentials](https://github.com/cwendt94/espn-api/discussions/150#discussioncomment-133615) (use `.env.example` as a template)
+2. Install from Source with dependencies:
+  ```bash
+  # for a regular installation
+  pip install .
+  ```
+  ```bash
+  # or install in development mode
+  pip install -e .
+  ````
+1. Create a `.env` file with [your ESPN API credentials](https://github.com/cwendt94/espn-api/discussions/150#discussioncomment-133615) (use `.env.example` as a template)
 
 ## Usage
 
@@ -34,7 +39,7 @@ A cleaner, more maintainable fantasy football reporting tool for ESPN leagues.
 
 # Or using the CLI
 ff weekly --open
-```
+````
 
 ### Generate a report for a specific week
 
@@ -102,6 +107,6 @@ You can customize the report by:
 3. Adding new statistical calculations to `stats.py`
 4. Creating new report types in `reports.py`
 
-# Example
+## Example
 
 ![Alt text](images/sample.png)
