@@ -36,6 +36,7 @@ var/
 reports/
 reports_bk/
 *.txt
+cache/
 
 # Temporary files
 .DS_Store

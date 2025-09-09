@@ -31,4 +31,10 @@ cp fball-32x32.png dist/reports/
 cp jag-16x16.png dist/reports/
 
 
+# Copy cached images
+if [ -d "cache/images" ] && [ "$(ls -A cache/images)" ]; then
+    cp -r cache/images/* dist/reports/
+fi
+
+
 echo "Build complete. The 'dist' directory is ready for deployment."
