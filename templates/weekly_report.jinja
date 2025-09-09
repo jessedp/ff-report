@@ -19,7 +19,7 @@
         <div class="matchup-row">
             <div class="team-section {% if matchup.winner == 'away' %}winner-bg{% elif matchup.winner == 'home' %}loser-bg{% endif %}">
                 <div class="team-main-score">
-                    <span class="team-name">{{ matchup.away_team.abbrev }}</span>
+                    <span class="team-name"><span class="logo-container"><img class='logo' src='{{ matchup.away_team.logo }}' /> </span> {{ matchup.away_team.abbrev }}</span>
                     <span class="team-score">{{ matchup.away_team.score|format_score }}</span>
                 </div>
                 <div class="team-sub-scores">
@@ -44,7 +44,7 @@
 
             <div class="team-section {% if matchup.winner == 'home' %}winner-bg{% elif matchup.winner == 'away' %}loser-bg{% endif %}">
                 <div class="team-main-score">
-                    <span class="team-name">{{ matchup.home_team.abbrev }}</span>
+                    <span class="team-name"><span class="logo-container"><img class='logo' src='{{ matchup.home_team.logo }}' /></span> {{ matchup.home_team.abbrev }}</span>
                     <span class="team-score">{{ matchup.home_team.score|format_score }}</span>
                 </div>
                 <div class="team-sub-scores">
@@ -97,7 +97,7 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ team.wins }} - {{ team.losses }}</td>
                 <td><em>{{ div_images[team.division_name[:1]]|safe }}</em></td>
-                <td>{{ team.team_abbrev }} {{ team.team_name }}</td>
+                <td>{{ team.team_name }}</td>
                 <td class="text-right">{{ team.points_for|format_score }}</td>
                 <td class="text-right">{{ team.points_against|format_score }}</td>
             </tr>
@@ -291,6 +291,80 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+
+<!-- Player Stats Section -->
+<div class="section">
+    <div class="section-title">Top 15 Player Scores</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="text-center">Rank</th>
+                <th class="text-right">Score</th>
+                <th>Pos.</th>
+                <th>Player</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in top_overall_players %}
+            <tr {% if player.slot_position == 'BE' %}class="bench-player"{% endif %}>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-right">{{ player.points|format_score }}</td>
+                <td>{{ player.position }}</td>
+                <td><img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />{{ player.name }}</td>
+                <td>
+                    {% if player.slot_position == 'BE' %}
+                        <span class="clown-large">🤡</span> {{ player.team_abbrev }}
+                    {% elif player.team_abbrev == 'FA' %}
+                       <span class="logo-container"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
+                    {% else %}
+                        <span class="logo-container"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="section-title">Top 15 by Position</div>
+    <hr>
+    {% for position, players in top_players_by_position.items() %}
+    <div class="sub-section">
+        <div class="sub-section-title">{{ position }}</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="text-center">Rank</th>
+                    <th class="text-right">Score</th>
+                    <th>Player</th>
+                    <th>Team</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                <tr {% if player.slot_position == 'BE' %}class="bench-player"{% endif %}>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td class="text-right">{{ player.points|format_score }}</td>
+                    <td><img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />{{ player.name }}</td>
+                    <td>
+                    {% if player.slot_position == 'BE' %}
+                        <span class="clown-large">🤡</span> {{ player.team_abbrev }}
+                    {% elif player.team_abbrev == 'FA' %}
+                       <span class="logo-container"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
+                    {% else %}
+                        <span class="logo-container"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
+                    {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
 </div>
 
 <!-- Points Per Player Per Position Section -->

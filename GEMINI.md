@@ -6,6 +6,15 @@ This project is a Python command-line tool for generating fantasy football repor
 
 *   **Python:** The core language for the application.
 *   **ESPN API:** Uses the `espn-api` library to fetch data from ESPN's fantasy football platform.
+We are using the the espn-api python package. I've cloned the documentation wiki into docs/
+docs/espn-api.wiki/Football-Intro.md
+docs/espn-api.wiki/Box-Player-Class.md
+docs/espn-api.wiki/Player-Class.md
+docs/espn-api.wiki/League-Class.md
+docs/espn-api.wiki/Matchup-Class.md
+docs/espn-api.wiki/Team-Class.md
+
+
 *   **Jinja2:** For templating the HTML reports.
 *   **Click:** For creating the command-line interface.
 *   **python-dotenv:** For managing environment variables for configuration.

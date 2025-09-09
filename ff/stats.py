@@ -256,3 +256,36 @@ def calculate_matchups(box_score):
         )
 
     return matchups
+
+def calculate_top_players(all_players):
+    """Calculate top player stats for the week
+
+    Args:
+        all_players: A list of all player dictionaries
+
+    Returns:
+        A tuple containing:
+        - A list of the top 15 players overall.
+        - A dictionary with top 15 players for each position.
+    """
+    # Sort all players by points, descending
+    sorted_players = sorted(all_players, key=lambda p: p['points'], reverse=True)
+
+    top_overall = sorted_players[:15]
+
+    top_by_position = {
+        'QB': [],
+        'RB': [],
+        'WR': [],
+        'TE': [],
+        'D/ST': [],
+        'K': [],
+        'P': []
+    }
+
+    for player in sorted_players:
+        pos = player['position']
+        if pos in top_by_position and len(top_by_position[pos]) < 15:
+            top_by_position[pos].append(player)
+
+    return top_overall, top_by_position

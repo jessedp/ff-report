@@ -8,7 +8,7 @@ build:
 
 # Deploy the built dist/ to the remote server
 deploy:
-	rsync -avz --delete dist/ ls2:/var/www/tbol/ff/
+	rsync -avz --quiet --delete dist/ ls2:/var/www/tbol/ff/
 
 # Dry-run to see what would be deployed without actually doing it
 dry-run:

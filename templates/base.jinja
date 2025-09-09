@@ -16,11 +16,35 @@
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #333;
         }
-        img.logo {
+        .logo-container img.logo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .logo-container {
             width: 4ch;
             height: 4ch;
-            padding-right: 5px;
+            border-radius: 50%;
+            overflow: hidden;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 5px;
+            flex-shrink: 0;
             vertical-align: middle;
+        }
+
+        /* New rule for logos in team-header */
+        .team-header img.logo {
+            max-width: 150px;
+            height: auto; /* Maintain aspect ratio */
+            margin-right: 5px; /* Add some spacing */
+            vertical-align: middle; /* Align with text */
+        }
+        .nfl-logo {
+            height: 1.2em;
+            vertical-align: middle;
+            margin-right: 0.3em;
         }
         .section {
             margin-bottom: 2.5em;
@@ -39,6 +63,12 @@
         .clown {
             color: #ff5722;
         }
+
+        .clown-large {
+            color: #ff5722;
+            font-size: 1.8em;
+        }
+
         .dead {
             color: #9c27b0;
         }
@@ -125,6 +155,14 @@
             color: #777;
         }
 
+        .sub-section {
+            margin-bottom: 1.5em;
+        }
+        .sub-section-title {
+            font-weight: bold;
+            margin-bottom: 0.5em;
+        }
+
         /* Standings table */
         .data-table {
             width: 100%;
@@ -191,6 +229,10 @@
         }
         .overview-item {
             margin-bottom: 0.3em;
+        }
+
+        .bench-player {
+            background-color: #ffd8b1 !important;
         }
 
         {% block extra_css %}{% endblock %}
