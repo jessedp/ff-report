@@ -10,71 +10,66 @@
     <div class="section-title">Box Score</div>
     <hr>
     <div class="box-score">
-        <div class="box-score-header flex-row">
-            <div class="flex-grow">Won</div>
-            <div class="flex-grow">&nbsp;</div>
-            <div class="flex-grow">Lost</div>
+        <div class="box-score-header">
+            <div>Away</div>
+            <div>Home</div>
         </div>
 
         {% for matchup in matchups %}
         <div class="matchup-row">
-            {% if matchup.winner == "home" %}
-            <div class="flex-row">
-                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+            <div class="team-section {% if matchup.winner == 'away' %}winner-bg{% elif matchup.winner == 'home' %}loser-bg{% endif %}">
+                <div class="team-main-score">
+                    <span class="team-name">{{ matchup.away_team.abbrev }}</span>
+                    <span class="team-score">{{ matchup.away_team.score|format_score }}</span>
                 </div>
-                <div class="vs-symbol">def.</div>
-                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
-                </div>
-            </div>
-            <div class="score-details-row">
-                <div class="score-details-label">MAX:</div>
-                <div class="score-details-value">{{ matchup.home_team.max_score|format_score }}</div>
-                <div class="score-details-value second">{{ matchup.away_team.max_score|format_score }}{% if
-                    matchup.lost_could_win %} <strong class="dead">💀💀💀</strong>{% endif %}</div>
-            </div>
-            <div class="score-details-row">
-                <div class="score-details-label">BEN:</div>
-                <div class="score-details-value">{{ matchup.home_team.bench|format_score }}{% if
-                    matchup.home_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
-                <div class="score-details-value second">{{ matchup.away_team.bench|format_score }}{% if
-                    matchup.away_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
-            </div>
-            {% elif matchup.winner == "away" %}
-            <div class="flex-row">
-                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
-                </div>
-                <div class="vs-symbol">def.</div>
-                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+                <div class="team-sub-scores">
+                    <div class="sub-score-row">
+                        <span class="sub-score-label">MAX:</span>
+                        <span class="sub-score-value">
+                            {{ matchup.away_team.max_score|format_score }}
+                            {% if matchup.winner == 'home' and matchup.lost_could_win %} <strong class="dead">💀</strong>{% endif %}
+                        </span>
+                    </div>
+                    <div class="sub-score-row">
+                        <span class="sub-score-label">BEN:</span>
+                        <span class="sub-score-value">
+                            {{ matchup.away_team.bench|format_score }}
+                            {% if matchup.away_team.bench_outscored %} <span class="clown">🤡</span>{% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
-            <div class="score-details-row">
-                <div class="score-details-label">MAX:</div>
-                <div class="score-details-value">{{ matchup.away_team.max_score|format_score }}</div>
-                <div class="score-details-value second">{{ matchup.home_team.max_score|format_score }}{% if
-                    matchup.lost_could_win %} <strong class="dead">💀💀💀</strong>{% endif %}</div>
-            </div>
-            <div class="score-details-row">
-                <div class="score-details-label">BEN:</div>
-                <div class="score-details-value">{{ matchup.away_team.bench|format_score }}{% if
-                    matchup.away_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
-                <div class="score-details-value second">{{ matchup.home_team.bench|format_score }}{% if
-                    matchup.home_team.bench_outscored %} <span class="clown">🤡🤡🤡</span>{% endif %}</div>
-            </div>
-            {% else %}
-            <div class="flex-row">
-                <div class="team-score">{{ matchup.home_team.abbrev }} - {{ matchup.home_team.score|format_score }}
+
+            <div class="vs-symbol">vs</div>
+
+            <div class="team-section {% if matchup.winner == 'home' %}winner-bg{% elif matchup.winner == 'away' %}loser-bg{% endif %}">
+                <div class="team-main-score">
+                    <span class="team-name">{{ matchup.home_team.abbrev }}</span>
+                    <span class="team-score">{{ matchup.home_team.score|format_score }}</span>
                 </div>
-                <div class="vs-symbol">=</div>
-                <div class="team-score">{{ matchup.away_team.abbrev }} - {{ matchup.away_team.score|format_score }}
+                <div class="team-sub-scores">
+                    <div class="sub-score-row">
+                        <span class="sub-score-label">MAX:</span>
+                        <span class="sub-score-value">
+                            {{ matchup.home_team.max_score|format_score }}
+                            {% if matchup.winner == 'away' and matchup.lost_could_win %} <strong class="dead">💀</strong>{% endif %}
+                        </span>
+                    </div>
+                    <div class="sub-score-row">
+                        <span class="sub-score-label">BEN:</span>
+                        <span class="sub-score-value">
+                            {{ matchup.home_team.bench|format_score }}
+                            {% if matchup.home_team.bench_outscored %} <span class="clown">🤡</span>{% endif %}
+                        </span>
+                    </div>
                 </div>
             </div>
-            {% endif %}
         </div>
         {% endfor %}
 
         <div class="legend">
-            <div>🤡🤡🤡 = <em>Team's bench outscored starters</em></div>
-            <div>💀💀💀 = <em>Team that lost could have won</em></div>
+            <div>🤡 = <em>Team's bench outscored starters</em></div>
+            <div>💀 = <em>Team that lost could have won</em></div>
             <div><em>MAX = Maximum possible score</em></div>
             <div><em>BEN = Total points left on the bench</em></div>
         </div>
@@ -203,9 +198,9 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Score</th>
-                <th>Result</th>
+                <th class="text-center">Rank</th>
+                <th class="text-right">Score</th>
+                <th class="text-center">Result</th>
                 <th>Div</th>
                 <th>Team</th>
             </tr>
@@ -213,9 +208,15 @@
         <tbody>
             {% for score in weekly_scores %}
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ score.score|format_score }}</td>
-                <td>{% if score.won %}W{% else %}L{% endif %}</td>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-right">{{ score.score|format_score }}</td>
+                <td class="text-center">
+                    {% if score.won %}
+                        <span class="result-win">W</span>
+                    {% else %}
+                        <span class="result-loss">L</span>
+                    {% endif %}
+                </td>
                 <td>{{ div_images[score.division]|safe }}</td>
                 <td>{{ score.name }}</td>
             </tr>
@@ -231,9 +232,9 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Bench Score</th>
-                <th>Result</th>
+                <th class="text-center">Rank</th>
+                <th class="text-right">Score</th>
+                <th class="text-center">Result</th>
                 <th>Div</th>
                 <th>Team</th>
             </tr>
@@ -241,9 +242,15 @@
         <tbody>
             {% for score in weekly_scores|sort(attribute='bench_score', reverse=True) %}
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ score.bench_score|format_score }}</td>
-                <td>{% if score.won %}W{% else %}L{% endif %}</td>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-right">{{ score.bench_score|format_score }}</td>
+                <td class="text-center">
+                    {% if score.won %}
+                        <span class="result-win">W</span>
+                    {% else %}
+                        <span class="result-loss">L</span>
+                    {% endif %}
+                </td>
                 <td>{{ div_images[score.division]|safe }}</td>
                 <td>{{ score.name }}</td>
             </tr>

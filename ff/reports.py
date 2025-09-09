@@ -69,7 +69,9 @@ class WeeklyReport:
         
         # Determine output file path
         if output_file is None:
-            output_file = f"{self.year}-week{week}.html"
+            output_dir = "reports"
+            os.makedirs(output_dir, exist_ok=True)
+            output_file = os.path.join(output_dir, f"{self.year}-week{week}.html")
         
         # Write the HTML to the file
         with open(output_file, 'w') as f:
