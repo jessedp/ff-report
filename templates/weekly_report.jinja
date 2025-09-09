@@ -225,6 +225,40 @@
     </table>
 </div>
 
+<!-- Weekly Max Scores Section -->
+<div class="section">
+    <div class="section-title">Weekly Max Scores</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="text-center">Rank</th>
+                <th class="text-right">Max Score</th>
+                <th class="text-center">Result</th>
+                <th>Div</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in weekly_scores|sort(attribute='max_score', reverse=True) %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-right">{{ score.max_score|format_score }}</td>
+                <td class="text-center">
+                    {% if score.won %}
+                        <span class="result-win">W</span>
+                    {% else %}
+                        <span class="result-loss">L</span>
+                    {% endif %}
+                </td>
+                <td>{{ div_images[score.division]|safe }}</td>
+                <td>{{ score.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 <!-- Weekly Bench Scores Section -->
 <div class="section">
     <div class="section-title">Weekly Bench Scores</div>
