@@ -5,6 +5,8 @@ import hashlib
 import urllib.request
 import shutil
 from .data import LeagueData
+from .stat_category_map import STAT_CATEGORY_LOOKUP
+from espn_api.football.constant import SETTINGS_SCORING_FORMAT_MAP, PLAYER_STATS_MAP
 from .stats import (
     calculate_weekly_scores,
     calculate_matchups,
@@ -190,6 +192,57 @@ class WeeklyReport:
             "top_overall_players": top_overall,
             "top_players_by_position": top_by_position,
         }
+
+        # --- Points Breakdown Refactored ---
+
+        # Aggregate points by stat ID
+        stat_name_to_id_map = {v: k for k, v in PLAYER_STATS_MAP.items()}
+        aggregated_points_by_id = {}
+        for player in all_players:
+            if player["team_abbrev"] == "FA" or player["slot_position"] == "BE":
+                continue
+            if "points_breakdown" in player and player["points_breakdown"]:
+                for stat_name, points in player["points_breakdown"].items():
+                    if isinstance(stat_name, str) and isinstance(points, (int, float)):
+                        stat_id = stat_name_to_id_map.get(stat_name)
+                        if stat_id:
+                            aggregated_points_by_id[stat_id] = aggregated_points_by_id.get(stat_id, 0.0) + points
+
+        # Create detailed breakdown with all necessary info
+        detailed_points_breakdown = []
+        for stat_id, total_points in aggregated_points_by_id.items():
+            # PLAYER_STATS_MAP is {id: name}, but id is a string. Let's be safe.
+            stat_name = PLAYER_STATS_MAP.get(int(stat_id))
+            category = STAT_CATEGORY_LOOKUP.get(stat_name, "Other") if stat_name else "Other"
+
+            # SETTINGS_SCORING_FORMAT_MAP is {id: object}, id is an int.
+            # Let's ensure we handle string/int keys properly.
+            try:
+                label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get('label', stat_name or stat_id)
+            except (ValueError, TypeError):
+                label = stat_name or stat_id
+
+            detailed_points_breakdown.append({
+                'label': label,
+                'category': category,
+                'total_points': total_points
+            })
+
+        # Sort by category, then by label
+        detailed_points_breakdown.sort(key=lambda x: (x['category'], x['label']))
+
+        # Create grouped breakdown for the pie chart
+        grouped_points_breakdown = {}
+        for item in detailed_points_breakdown:
+            category = item['category']
+            grouped_points_breakdown[category] = grouped_points_breakdown.get(category, 0.0) + item['total_points']
+
+        # Sort the grouped data by category for consistent display
+        sorted_grouped_points_breakdown = dict(sorted(grouped_points_breakdown.items()))
+
+        # Add to context
+        context["grouped_points_breakdown"] = sorted_grouped_points_breakdown
+        context["detailed_points_breakdown"] = detailed_points_breakdown
 
         # Render the template
         html = self.template.render_weekly_report(context)

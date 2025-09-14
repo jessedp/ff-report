@@ -1,18 +1,17 @@
-
 import os
 import json
 import re
+import sys
 
-REPORTS_DIR = 'reports'
-OUTPUT_FILE = 'reports.json'
-
-def build_index():
+def build_index(reports_dir='reports', output_file='reports.json'):
     reports = {}
-    if not os.path.exists(REPORTS_DIR):
-        print(f"Directory not found: {REPORTS_DIR}")
+    if not os.path.exists(reports_dir):
+        print(f"Directory not found: {reports_dir}")
+        with open(output_file, 'w') as f:
+            json.dump({}, f)
         return
 
-    for filename in os.listdir(REPORTS_DIR):
+    for filename in os.listdir(reports_dir):
         match = re.match(r'(\d{4})-week(\d+)\.html', filename)
         if match:
             year, week = match.groups()
@@ -25,10 +24,18 @@ def build_index():
     for year in reports:
         reports[year].sort()
 
-    with open(OUTPUT_FILE, 'w') as f:
-        json.dump(reports, f, indent=4, sort_keys=True)
+    # sort years
+    sorted_reports = {k: reports[k] for k in sorted(reports, reverse=True)}
 
-    print(f"Successfully generated {OUTPUT_FILE}")
+    with open(output_file, 'w') as f:
+        json.dump(sorted_reports, f, indent=4)
+
+    print(f"Successfully generated {output_file}")
 
 if __name__ == "__main__":
-    build_index()
+    if len(sys.argv) > 2:
+        build_index(sys.argv[1], sys.argv[2])
+    elif len(sys.argv) > 1:
+        build_index(reports_dir=sys.argv[1])
+    else:
+        build_index()

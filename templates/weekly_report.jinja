@@ -293,6 +293,133 @@
     </table>
 </div>
 
+<!-- Points Breakdown Charts Section -->
+<div class="section">
+    <div class="section-title">Points Breakdown</div>
+    <hr>
+    <div style="width: 75%; margin: auto;">
+        <canvas id="pointsPieChart"></canvas>
+    </div>
+    <div id="barChartContainer" style="display: none; margin-top: 20px;">
+        <h3 id="barChartTitle" style="text-align: center;"></h3>
+        <canvas id="pointsBarChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function transparentize(hexColor, alpha) {
+        let color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
+        if (color.length === 3) {
+            color = color.split('').map(char => char + char).join('');
+        }
+        const r = parseInt(color.substring(0, 2), 16);
+        const g = parseInt(color.substring(2, 4), 16);
+        const b = parseInt(color.substring(4, 6), 16);
+        const a = Math.max(0, Math.min(1, alpha));
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const groupedData = {{ grouped_points_breakdown|tojson }};
+        const detailedData = {{ detailed_points_breakdown|tojson }};
+
+        const pieCtx = document.getElementById('pointsPieChart');
+        if (pieCtx) {
+            const baseColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#7FDBDA', '#FF9F40',
+                '#FFB3C1', '#A3D9B1', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00'
+//                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#6AFCFF', '#FF9F40',
+//                '#5F9EA0', '#A52A2A', '#FFE066', '#DEB887', '#41D3BD', '#7FFF00'
+            ];
+            const pieChart = new Chart(pieCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(groupedData),
+                    datasets: [{
+                        data: Object.values(groupedData),
+                        backgroundColor: baseColors.map(color => transparentize(color, 0.6)),
+                        borderColor: baseColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            onClick: (e, legendItem, legend) => {
+                                const index = legend.chart.data.labels.indexOf(legendItem.text);
+                                const color = legend.chart.data.datasets[0].borderColor[index];
+                                updateBarChart(legendItem.text, color);
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Aggregated Points by Category'
+                        }
+                    },
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const clickedIndex = elements[0].index;
+                            const clickedCategory = pieChart.data.labels[clickedIndex];
+                            const color = pieChart.data.datasets[0].borderColor[clickedIndex];
+                            updateBarChart(clickedCategory, color);
+                        }
+                    }
+                }
+            });
+        }
+
+        const barChartContainer = document.getElementById('barChartContainer');
+        const barChartTitle = document.getElementById('barChartTitle');
+        const barCtx = document.getElementById('pointsBarChart');
+        let barChart;
+
+        function updateBarChart(category, color) {
+            const categoryData = detailedData.filter(d => d.category === category);
+
+            categoryData.sort((a, b) => b.total_points - a.total_points);
+
+            const labels = categoryData.map(d => d.label);
+            const data = categoryData.map(d => d.total_points);
+
+            barChartTitle.innerText = `Breakdown for ${category}`;
+            barChartContainer.style.display = 'block';
+
+            if (barChart) {
+                barChart.destroy();
+            }
+
+            if (barCtx) {
+                barChart = new Chart(barCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Points',
+                            data: data,
+                            backgroundColor: transparentize(color, 0.5),
+                            borderColor: color,
+                            borderWidth: 2,
+                            borderRadius: 5,
+                            borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+
 <!-- Player Stats Section -->
 <div class="section">
     <div class="section-title">Top 15 Player Scores</div>

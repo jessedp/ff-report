@@ -37,6 +37,8 @@ reports/
 reports_bk/
 *.txt
 cache/
+preview/
+data/
 
 # Temporary files
 .DS_Store

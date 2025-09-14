@@ -17,3 +17,6 @@ dry-run:
 # Clean up the dist/ directory
 clean:
 	rm -rf dist/
+
+preview:
+	./preview.sh $(ARGS)
