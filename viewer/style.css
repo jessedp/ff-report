@@ -39,3 +39,16 @@ iframe {
   height: 100%;
   border: none;
 }
+
+@media (max-width: 768px) { /* Adjust breakpoint as needed */
+  .header-content {
+    max-width: 100%; /* Allow header to take full width */
+    padding: 0.5rem; /* Reduce padding on small screens */
+    flex-wrap: wrap; /* Allow items to wrap if needed */
+    justify-content: center; /* Center items when wrapped */
+  }
+  nav select {
+    margin-left: 0; /* Remove left margin on selects */
+    margin-top: 0.5rem; /* Add top margin if wrapped */
+  }
+}

@@ -324,6 +324,13 @@
             object-fit: cover; /* Ensure image covers the area */
             border-radius: 5px; /* Optional: slightly rounded corners for headshot */
         }
+
+        @media (max-width: 768px) { /* Adjust breakpoint as needed */
+            html {
+                max-width: 100%; /* Allow content to take full width */
+                padding: 0em 0.5em; /* Reduce padding on small screens */
+            }
+        }
     </style>
 </head>
 <body>
