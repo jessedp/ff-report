@@ -503,7 +503,18 @@
     <div class="team-header">
         {# Assuming team logo is available on one of the players #}
         <img class='logo' src='{{ team_data.players[0].team_logo }}' />
-        <span>{{ team_name }}</span>
+        <div class="team-header-text-content">
+            <span>{{ team_name }}</span>
+            {% if team_data.team_object %}
+            <div class="team-details">
+                <span class="team-record">{{ team_data.team_object.wins }}-{{ team_data.team_object.losses }}{% if team_data.team_object.ties %}-{{ team_data.team_object.ties }}{% endif %}</span>
+                <span class="team-division">{{ div_images[team_data.team_object.division_name[:1]]|safe }} {{ team_data.team_object.division_name }}</span>
+                <span class="team-points">PF: {{ team_data.team_object.points_for|round(2) }} PA: {{ team_data.team_object.points_against|round(2) }}</span>
+                <span class="team-moves">Adds: {{ team_data.team_object.acquisitions }} Drops: {{ team_data.team_object.drops }} Trades: {{ team_data.team_object.trades }} IR: {{ team_data.team_object.move_to_ir }}</span>
+                <span class="team-playoff-pct">Playoff %: {{ (team_data.team_object.playoff_pct)|round(2) }}%</span>
+            </div>
+            {% endif %}
+        </div>
     </div>
     <hr>
 

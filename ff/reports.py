@@ -183,11 +183,15 @@ class WeeklyReport:
 
         # Group players by team
         players_by_team = {}
+        # Create a mapping from team_name to the actual Team object for easy lookup
+        team_name_to_object = {team.team_name: team for team in self.data.league.teams}
+
         for player in all_players:
             if player['team_abbrev'] != 'FA':
                 team_name = player['team_name']
                 if team_name not in players_by_team:
                     players_by_team[team_name] = {
+                        'team_object': team_name_to_object.get(team_name), # Add the Team object here
                         'players': [],
                         'grouped_points_breakdown': {},
                         'detailed_points_breakdown': []

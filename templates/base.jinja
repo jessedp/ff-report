@@ -41,6 +41,11 @@
             margin-right: 5px; /* Add some spacing */
             vertical-align: middle; /* Align with text */
         }
+
+        .team-header-text-content {
+            display: flex;
+            flex-direction: column;
+        }
         .nfl-logo {
             height: 1.2em;
             vertical-align: middle;
@@ -291,6 +296,44 @@
                 padding: 3px;
                 font-size: 12px;
             }
+        }
+
+        .team-details {
+            font-size: 0.8em;
+            margin-left: 0; /* Removed or set to 0 */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5em;
+            align-items: center;
+        }
+
+        .team-details span {
+            background-color: #f0f0f0;
+            padding: 0.2em 0.5em;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        .team-details .team-record {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .team-details .team-division {
+            color: #555;
+        }
+
+        .team-details .team-points {
+            color: #007bff;
+        }
+
+        .team-details .team-moves {
+            color: #28a745;
+        }
+
+        .team-details .team-playoff-pct {
+            color: #6f42c1;
+            font-weight: bold;
         }
 
         {% block extra_css %}{% endblock %}
