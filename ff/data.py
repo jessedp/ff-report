@@ -136,6 +136,8 @@ class LeagueData:
                         "team_abbrev": matchup.home_team.team_abbrev,
                         "team_logo": matchup.home_team.logo_url,
                         "points_breakdown": player.points_breakdown,
+                        "projected_points_breakdown": player.projected_points_breakdown,
+                        "projected_points": player.projected_points,
                     }
                 )
             for player in matchup.away_lineup:
@@ -150,6 +152,8 @@ class LeagueData:
                         "team_abbrev": matchup.away_team.team_abbrev,
                         "team_logo": matchup.away_team.logo_url,
                         "points_breakdown": player.points_breakdown,
+                        "projected_points_breakdown": player.projected_points_breakdown,
+                        "projected_points": player.projected_points,
                     }
                 )
 

@@ -162,18 +162,94 @@ class WeeklyReport:
                 matchup["away_team"]["logo"]
             )
 
-        # Calculate position stats for all teams
-        position_stats = {}
-        for team in weekly_scores:
-            position_stats[team["name"]] = points_per_player_per_position(
-                team["lineup"]
-            )
-
         # Get top player stats
         all_players = self.data.get_weekly_players(week)
         for player in all_players:
             player["team_logo"] = cache_logo(player["team_logo"])
         top_overall, top_by_position = calculate_top_players(all_players)
+
+        # --- New Points Per Player Per Position ---
+        
+        # Helper for sorting players
+        pos_order = ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"]
+        def get_player_sort_key(player):
+            slot = player['slot_position']
+            if slot == 'BE':
+                return (1, 0) # Bench players last
+            try:
+                return (0, pos_order.index(slot))
+            except ValueError:
+                return (0, len(pos_order)) # Other starters after defined order
+
+        # Group players by team
+        players_by_team = {}
+        for player in all_players:
+            if player['team_abbrev'] != 'FA':
+                if player['team_name'] not in players_by_team:
+                    players_by_team[player['team_name']] = []
+                players_by_team[player['team_name']].append(player)
+
+        # Process stats for each player and sort
+        stat_name_to_id_map = {v: int(k) for k, v in PLAYER_STATS_MAP.items()}
+        for team_name, players in players_by_team.items():
+            for player in players:
+                # Normalize stats table
+                actual_breakdown = player.get('points_breakdown') or {}
+                proj_breakdown = player.get('projected_points_breakdown') or {}
+                
+                all_stat_names = set(actual_breakdown.keys()) | set(proj_breakdown.keys())
+                
+                stat_ids = [stat_name_to_id_map.get(name) for name in all_stat_names if stat_name_to_id_map.get(name) is not None]
+                
+                # Create a list of stat info objects to sort by abbr
+                stats_to_display = []
+                for stat_id in stat_ids:
+                    stat_name = PLAYER_STATS_MAP.get(stat_id)
+                    header_info = SETTINGS_SCORING_FORMAT_MAP.get(stat_id, {})
+                    stats_to_display.append({
+                        'id': stat_id,
+                        'name': stat_name,
+                        'abbr': header_info.get('abbr', stat_name or str(stat_id)),
+                        'label': header_info.get('label', stat_name or str(stat_id))
+                    })
+                
+                stats_to_display.sort(key=lambda x: x['abbr'])
+
+                headers = []
+                actual_row = []
+                proj_row = []
+
+                for stat_info in stats_to_display:
+                    stat_name = stat_info['name']
+                    
+                    headers.append({
+                        'abbr': stat_info['abbr'],
+                        'label': stat_info['label']
+                    })
+                    
+                    actual_pts = actual_breakdown.get(stat_name, 0.0)
+                    proj_pts = proj_breakdown.get(stat_name, 0.0)
+                    
+                    actual_style = ''
+                    proj_style = ''
+                    if actual_pts == proj_pts:
+                        actual_style = 'light-blue'
+                        proj_style = 'light-blue'
+                    elif actual_pts > proj_pts:
+                        actual_style = 'light-green'
+                    else:
+                        proj_style = 'light-red'
+                    
+                    actual_row.append({'value': actual_pts, 'style': actual_style})
+                    proj_row.append({'value': proj_pts, 'style': proj_style})
+
+                player['stats_table'] = {
+                    'headers': headers,
+                    'actual': actual_row,
+                    'projected': proj_row
+                }
+
+            players.sort(key=get_player_sort_key)
 
         # Prepare template context
         context = {
@@ -181,7 +257,7 @@ class WeeklyReport:
             "week": week,
             "matchups": matchups,
             "weekly_scores": weekly_scores,
-            "position_stats": position_stats,
+            "players_by_team": players_by_team, # New data structure
             "standings": self.data.get_standings(),
             "power_rankings": self.data.get_power_rankings(week),
             "top_week": self.data.get_top_scored_week(),
@@ -199,6 +275,8 @@ class WeeklyReport:
         stat_name_to_id_map = {v: k for k, v in PLAYER_STATS_MAP.items()}
         aggregated_points_by_id = {}
         for player in all_players:
+            if player["slot_position"] == "QB":
+                print(player)
             if player["team_abbrev"] == "FA" or player["slot_position"] == "BE":
                 continue
             if "points_breakdown" in player and player["points_breakdown"]:

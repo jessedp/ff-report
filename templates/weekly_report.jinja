@@ -297,7 +297,7 @@
 <div class="section">
     <div class="section-title">Points Breakdown</div>
     <hr>
-    <div style="width: 75%; margin: auto;">
+    <div style="width: 95%; margin: auto;">
         <canvas id="pointsPieChart"></canvas>
     </div>
     <div id="barChartContainer" style="display: none; margin-top: 20px;">
@@ -494,88 +494,99 @@
     {% endfor %}
 </div>
 
-<!-- Points Per Player Per Position Section -->
-<div class="section">
-    <div class="section-title">Points Per Player Per Position</div>
+<!-- New Points Per Player Section -->
+<div class="section points-per-player-section">
+    <div class="section-title">Points Per Player Breakdown</div>
     <hr>
-    {% for matchup in matchups %}
+    {% for team_name, players in players_by_team.items() %}
     <div class="team-header">
-        <img class='logo' src='{{ matchup.home_team.logo }}' />
-        <span>{{ matchup.home_team.name }}</span>
+        {# Assuming team logo is available on one of the players #}
+        <img class='logo' src='{{ players[0].team_logo }}' />
+        <span>{{ team_name }}</span>
     </div>
     <hr>
-    {% set pppp = position_stats[matchup.home_team.name] %}
-    <div class="position-grid">
-        {% for pos in ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"] %}
-        <div>{{ pos }}:</div>
-        <div>
-            {% if pos in pppp %}({{ pppp[pos].count }}){% else %}(0){% endif %}
-        </div>
-        <div>
-            {% if pos in pppp %}
-            {% if pppp[pos].count == 1 %}
-            {{ pppp[pos].points|format_score }}
-            {% else %}
-            {{ pppp[pos].point_arr }} avg: {{ pppp[pos].avg|format_score }}
-            {% endif %}
-            {% endif %}
-        </div>
-        {% endfor %}
 
-        <div class="bench-header">BENCH</div>
-        {% for key in pppp|sort %}
-        {% if key.startswith("BE") %}
-        <div>{{ key }}:</div>
-        <div>({{ pppp[key].count }})</div>
-        <div>
-            {% if pppp[key].count == 1 %}
-            {{ pppp[key].points|format_score }}
-            {% else %}
-            {{ pppp[key].min|format_score }} / {{ pppp[key].avg|format_score }} / {{ pppp[key].max|format_score }}
-            {% endif %}
+    <div class="sub-section-title">Starters</div>
+    {% for player in players if player.slot_position != 'BE' %}
+        <div class="player-breakdown">
+            <div class="player-info">
+                <div>
+                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />
+                    <strong>{{ player.name }}</strong> ({{ player.position }})
+                </div>
+                <div class="player-total-points">
+                    <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
+                </div>
+            </div>
+            <table class="data-table stats-breakdown-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for header in player.stats_table.headers %}
+                            <th title="{{ header.label }}">{{ header.abbr }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Actual</td>
+                        {% for cell in player.stats_table.actual %}
+                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Projected</td>
+                        {% for cell in player.stats_table.projected %}
+                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        {% endif %}
-        {% endfor %}
-    </div>
+    {% else %}
+        <p>No starters found for this team.</p>
+    {% endfor %}
 
-    <div class="team-header">
-        <img class='logo' src='{{ matchup.away_team.logo }}' />
-        <span>{{ matchup.away_team.name }}</span>
-    </div>
-    <hr>
-    {% set pppp = position_stats[matchup.away_team.name] %}
-    <div class="position-grid">
-        {% for pos in ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"] %}
-        <div>{{ pos }}:</div>
-        <div>
-            {% if pos in pppp %}({{ pppp[pos].count }}){% else %}(0){% endif %}
+    <div class="sub-section-title" style="margin-top: 2em;">Bench</div>
+    {% for player in players if player.slot_position == 'BE' %}
+        <div class="player-breakdown">
+            <div class="player-info">
+                <div>
+                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />
+                    <strong>{{ player.name }}</strong> ({{ player.position }})
+                </div>
+                <div class="player-total-points">
+                    <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
+                </div>
+            </div>
+            <table class="data-table stats-breakdown-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for header in player.stats_table.headers %}
+                            <th title="{{ header.label }}">{{ header.abbr }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Actual</td>
+                        {% for cell in player.stats_table.actual %}
+                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td>Projected</td>
+                        {% for cell in player.stats_table.projected %}
+                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        <div>
-            {% if pos in pppp %}
-            {% if pppp[pos].count == 1 %}
-            {{ pppp[pos].points|format_score }}
-            {% else %}
-            {{ pppp[pos].point_arr }} avg: {{ pppp[pos].avg|format_score }}
-            {% endif %}
-            {% endif %}
-        </div>
-        {% endfor %}
-
-        <div class="bench-header">BENCH</div>
-        {% for key in pppp|sort %}
-        {% if key.startswith("BE") %}
-        <div>{{ key }}:</div>
-        <div>({{ pppp[key].count }})</div>
-        <div>
-            {% if pppp[key].count == 1 %}
-            {{ pppp[key].points|format_score }}
-            {% else %}
-            {{ pppp[key].min|format_score }} / {{ pppp[key].avg|format_score }} / {{ pppp[key].max|format_score }}
-            {% endif %}
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
+    {% else %}
+        <p>No bench players found for this team.</p>
+    {% endfor %}
     {% endfor %}
 </div>
 {% endblock %}
