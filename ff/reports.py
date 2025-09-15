@@ -367,9 +367,33 @@ class WeeklyReport:
         # Sort the grouped data by category for consistent display
         sorted_grouped_points_breakdown = dict(sorted(grouped_points_breakdown.items()))
 
+        # Prepare data for radar chart
+        all_stat_categories = set()
+        for team_name, team_data in players_by_team.items():
+            all_stat_categories.update(team_data['grouped_points_breakdown'].keys())
+        
+        sorted_stat_categories = sorted(list(all_stat_categories))
+
+        radar_datasets = []
+        for team_name, team_data in players_by_team.items():
+            team_points_data = []
+            for category in sorted_stat_categories:
+                team_points_data.append(team_data['grouped_points_breakdown'].get(category, 0.0))
+            
+            radar_datasets.append({
+                'label': team_name,
+                'data': team_points_data
+            })
+        
+        final_radar_chart_data = {
+            'labels': sorted_stat_categories,
+            'datasets': radar_datasets
+        }
+
         # Add to context
         context["grouped_points_breakdown"] = sorted_grouped_points_breakdown
         context["detailed_points_breakdown"] = detailed_points_breakdown
+        context["radar_chart_data"] = final_radar_chart_data # Use the new structure
 
         # Render the template
         html = self.template.render_weekly_report(context)
