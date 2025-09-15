@@ -108,3 +108,38 @@ clean:
 *   **Testing:** (TODO: Add information about testing practices if tests are found.)
 *   **Contributions:** (TODO: Add information about contribution guidelines if available.)
 *   **Dependencies:** Project dependencies are managed in `setup.py`.
+
+# Session Summary (Sunday, September 14, 2025)
+
+This session focused on significant enhancements to the weekly report generation, particularly around data visualization and detailed breakdowns.
+
+### Key Accomplishments:
+
+1.  **`preview.sh` Script Improvement:**
+    *   Modified the script to check for an existing server on port 8000 before attempting to start a new one, preventing errors and redundant processes.
+
+2.  **Interactive Points Breakdown Chart:**
+    *   Replaced the static "Aggregated Points Breakdown" table with an interactive doughnut chart.
+    *   Implemented functionality where clicking on a chart slice *or* its corresponding legend item reveals a new bar chart.
+    *   The bar chart details the specific stat categories that make up the selected doughnut slice.
+    *   The color of the bar chart is synchronized with the color of the clicked doughnut slice for better visual context.
+    *   A custom, self-contained `transparentize` JavaScript function was created to generate prettier, semi-transparent colors for the charts without adding external libraries.
+
+3.  **"Points Per Player Breakdown" Section Overhaul:**
+    *   Completely redesigned the layout and data presentation for this section.
+    *   Data is now grouped by fantasy team and separated into "Starters" and "Bench".
+    *   Starters are sorted in a logical position order (`QB, RB, WR,` etc.).
+    *   Each player entry now displays:
+        *   The player's info and pro team logo.
+        *   A summary of total points in "ACT / proj" format, with a larger font for the actual points.
+        *   A detailed, horizontally scrollable table breaking down points by individual stat.
+    *   **Stats Table Features:**
+        *   **Actual vs. Projected:** The table has dedicated rows for both actual and projected points.
+        *   **Column Normalization:** All available stat categories from both actual and projected breakdowns are included, ensuring columns are always aligned.
+        *   **Conditional Formatting:** Cells are color-coded (green for over-performance, red for under-performance, blue for meeting projection) to provide at-a-glance analysis.
+        *   **Sorted Headers:** The table columns are now sorted alphabetically by the stat abbreviation (e.g., 'PA', 'PC', 'PY').
+
+4.  **Backend & Styling Refinements:**
+    *   **Data Layer:** Updated `ff/data.py` to fetch `projected_points` and `projected_points_breakdown` from the API.
+    *   **Data Processing:** Significantly refactored `ff/reports.py` to handle the complex normalization, sorting, and styling logic for the new player breakdown tables, passing a clean, pre-processed data structure to the template.
+    *   **CSS:** Added multiple new CSS classes to `templates/base.jinja` to support the new layouts, colors, and responsive scrolling.
