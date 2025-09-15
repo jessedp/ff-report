@@ -518,30 +518,32 @@
                     <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
                 </div>
             </div>
-            <table class="data-table stats-breakdown-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        {% for header in player.stats_table.headers %}
-                            <th title="{{ header.label }}">{{ header.abbr }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Actual</td>
-                        {% for cell in player.stats_table.actual %}
-                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td>Projected</td>
-                        {% for cell in player.stats_table.projected %}
-                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
+            <div class="stats-table-container">
+                <table class="data-table stats-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            {% for header in player.stats_table.headers %}
+                                <th title="{{ header.label }}">{{ header.abbr }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Actual</td>
+                            {% for cell in player.stats_table.actual %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Projected</td>
+                            {% for cell in player.stats_table.projected %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% else %}
         <p>No starters found for this team.</p>
@@ -559,30 +561,32 @@
                     <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
                 </div>
             </div>
-            <table class="data-table stats-breakdown-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        {% for header in player.stats_table.headers %}
-                            <th title="{{ header.label }}">{{ header.abbr }}</th>
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Actual</td>
-                        {% for cell in player.stats_table.actual %}
-                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                        {% endfor %}
-                    </tr>
-                    <tr>
-                        <td>Projected</td>
-                        {% for cell in player.stats_table.projected %}
-                            <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                        {% endfor %}
-                    </tr>
-                </tbody>
-            </table>
+            <div class="stats-table-container">
+                <table class="data-table stats-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            {% for header in player.stats_table.headers %}
+                                <th title="{{ header.label }}">{{ header.abbr }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Actual</td>
+                            {% for cell in player.stats_table.actual %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Projected</td>
+                            {% for cell in player.stats_table.projected %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% else %}
         <p>No bench players found for this team.</p>
