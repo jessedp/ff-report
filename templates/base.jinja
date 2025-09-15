@@ -267,6 +267,32 @@
             width: 100%;
         }
 
+        @media (pointer: coarse), (hover: none) {
+            [title] {
+                position: relative;
+                display: inline-flex;
+                justify-content: center;
+            }
+            th[title] {
+                position: relative;
+                display: table-cell; /* Ensure it behaves like a table cell */
+            }
+            .stats-breakdown-table th {
+                display: table-cell; /* Ensure all th in this table behave like table cells */
+            }
+            [title]:focus::after, th[title]:focus::after {
+                content: attr(title);
+                position: absolute;
+                top: 90%;
+                color: #000;
+                background-color: #fff;
+                border: 1px solid;
+                width: fit-content;
+                padding: 3px;
+                font-size: 12px;
+            }
+        }
+
         {% block extra_css %}{% endblock %}
     .player-info {
             display: flex;
