@@ -185,14 +185,19 @@ class WeeklyReport:
         players_by_team = {}
         for player in all_players:
             if player['team_abbrev'] != 'FA':
-                if player['team_name'] not in players_by_team:
-                    players_by_team[player['team_name']] = []
-                players_by_team[player['team_name']].append(player)
+                team_name = player['team_name']
+                if team_name not in players_by_team:
+                    players_by_team[team_name] = {
+                        'players': [],
+                        'grouped_points_breakdown': {},
+                        'detailed_points_breakdown': []
+                    }
+                players_by_team[team_name]['players'].append(player)
 
         # Process stats for each player and sort
         stat_name_to_id_map = {v: int(k) for k, v in PLAYER_STATS_MAP.items()}
-        for team_name, players in players_by_team.items():
-            for player in players:
+        for team_name, team_data in players_by_team.items():
+            for player in team_data['players']:
                 # Normalize stats table
                 actual_breakdown = player.get('points_breakdown') or {}
                 proj_breakdown = player.get('projected_points_breakdown') or {}
@@ -249,7 +254,47 @@ class WeeklyReport:
                     'projected': proj_row
                 }
 
-            players.sort(key=get_player_sort_key)
+            team_data['players'].sort(key=get_player_sort_key)
+
+        # Calculate team-specific points breakdowns
+        for team_name, team_data in players_by_team.items():
+            team_all_players = team_data['players']
+            team_aggregated_points_by_id = {}
+
+            for player in team_all_players:
+                if player["slot_position"] == "BE": # Only consider starters for team breakdown
+                    continue
+                if "points_breakdown" in player and player["points_breakdown"]:
+                    for stat_name, points in player["points_breakdown"].items():
+                        if isinstance(stat_name, str) and isinstance(points, (int, float)):
+                            stat_id = stat_name_to_id_map.get(stat_name)
+                            if stat_id:
+                                team_aggregated_points_by_id[stat_id] = team_aggregated_points_by_id.get(stat_id, 0.0) + points
+
+            team_detailed_points_breakdown = []
+            for stat_id, total_points in team_aggregated_points_by_id.items():
+                stat_name = PLAYER_STATS_MAP.get(int(stat_id))
+                category = STAT_CATEGORY_LOOKUP.get(stat_name, "Other") if stat_name else "Other"
+                try:
+                    label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get('label', stat_name or stat_id)
+                except (ValueError, TypeError):
+                    label = stat_name or stat_id
+
+                team_detailed_points_breakdown.append({
+                    'label': label,
+                    'category': category,
+                    'total_points': total_points
+                })
+
+            team_detailed_points_breakdown.sort(key=lambda x: (x['category'], x['label']))
+
+            team_grouped_points_breakdown = {}
+            for item in team_detailed_points_breakdown:
+                category = item['category']
+                team_grouped_points_breakdown[category] = team_grouped_points_breakdown.get(category, 0.0) + item['total_points']
+
+            team_data['grouped_points_breakdown'] = dict(sorted(team_grouped_points_breakdown.items()))
+            team_data['detailed_points_breakdown'] = team_detailed_points_breakdown
 
         # Prepare template context
         context = {

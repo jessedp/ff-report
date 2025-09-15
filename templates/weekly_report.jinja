@@ -498,16 +498,125 @@
 <div class="section points-per-player-section">
     <div class="section-title">Points Per Player Breakdown</div>
     <hr>
-    {% for team_name, players in players_by_team.items() %}
+    {% for team_name, team_data in players_by_team.items() %}
     <div class="team-header">
         {# Assuming team logo is available on one of the players #}
-        <img class='logo' src='{{ players[0].team_logo }}' />
+        <img class='logo' src='{{ team_data.players[0].team_logo }}' />
         <span>{{ team_name }}</span>
     </div>
     <hr>
 
+    <div class="team-points-breakdown-charts">
+        <div style="width: 75%; margin: auto;">
+            <canvas id="pointsPieChart_{{ team_name | replace(' ', '_') }}"></canvas>
+        </div>
+        <div id="barChartContainer_{{ team_name | replace(' ', '_') }}" style="display: none; margin-top: 20px;">
+            <h3 id="barChartTitle_{{ team_name | replace(' ', '_') }}" style="text-align: center;"></h3>
+            <canvas id="pointsBarChart_{{ team_name | replace(' ', '_') }}"></canvas>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const teamGroupedData = {{ players_by_team[team_name].grouped_points_breakdown|tojson }};
+            const teamDetailedData = {{ players_by_team[team_name].detailed_points_breakdown|tojson }};
+
+            const pieCtx = document.getElementById('pointsPieChart_{{ team_name | replace(' ', '_') }}');
+            if (pieCtx) {
+                const baseColors = [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#7FDBDA', '#FF9F40',
+                    '#FFB3C1', '#A3D9B1', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00'
+                ];
+                const pieChart = new Chart(pieCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(teamGroupedData),
+                        datasets: [{
+                            data: Object.values(teamGroupedData),
+                            backgroundColor: baseColors.map(color => transparentize(color, 0.6)),
+                            borderColor: baseColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                onClick: (e, legendItem, legend) => {
+                                    const index = legend.chart.data.labels.indexOf(legendItem.text);
+                                    const color = legend.chart.data.datasets[0].borderColor[index];
+                                    updateTeamBarChart(legendItem.text, color, '{{ team_name | replace(' ', '_') }}');
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Aggregated Points by Category'
+                            }
+                        },
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const clickedIndex = elements[0].index;
+                                const clickedCategory = pieChart.data.labels[clickedIndex];
+                                const color = pieChart.data.datasets[0].borderColor[clickedIndex];
+                                updateTeamBarChart(clickedCategory, color, '{{ team_name | replace(' ', '_') }}');
+                            }
+                        }
+                    }
+                });
+            }
+
+            const barChartContainer = document.getElementById('barChartContainer_{{ team_name | replace(' ', '_') }}');
+            const barChartTitle = document.getElementById('barChartTitle_{{ team_name | replace(' ', '_') }}');
+            const barCtx = document.getElementById('pointsBarChart_{{ team_name | replace(' ', '_') }}');
+            let barChart;
+
+            function updateTeamBarChart(category, color, teamId) {
+                const categoryData = teamDetailedData.filter(d => d.category === category);
+
+                categoryData.sort((a, b) => b.total_points - a.total_points);
+
+                const labels = categoryData.map(d => d.label);
+                const data = categoryData.map(d => d.total_points);
+
+                barChartTitle.innerText = `Breakdown for ${category}`;
+                barChartContainer.style.display = 'block';
+
+                if (barChart) {
+                    barChart.destroy();
+                }
+
+                if (barCtx) {
+                    barChart = new Chart(barCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Points',
+                                data: data,
+                                backgroundColor: transparentize(color, 0.5),
+                                borderColor: color,
+                                borderWidth: 2,
+                                borderRadius: 5,
+                                borderSkipped: false,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+
     <div class="sub-section-title">Starters</div>
-    {% for player in players if player.slot_position != 'BE' %}
+    {% for player in team_data.players if player.slot_position != 'BE' %}
         <div class="player-breakdown">
             <div class="player-info">
                 <div class="player-details-line">
@@ -551,12 +660,12 @@
     {% endfor %}
 
     <div class="sub-section-title" style="margin-top: 2em;">Bench</div>
-    {% for player in players if player.slot_position == 'BE' %}
+    {% for player in team_data.players if player.slot_position == 'BE' %}
         <div class="player-breakdown">
             <div class="player-info">
                 <div class="player-details-line">
                     <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
-                    <div class="player-headshot"><img height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"><img height="35px" src="https://a.espncdn.com/combiner/i?img=/games/lm-static/ffl/images/nomug.png&amp;w=96&amp;h=70&amp;cb=1" width="48px" alt="{{ player.name }}" class="fallback"></div>
+                    <div class="player-headshot"><img height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"></div>
                     <strong>{{ player.name }}</strong> ({{ player.position }})
                 </div>
                 <div class="player-total-points">
