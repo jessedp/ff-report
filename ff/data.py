@@ -127,6 +127,7 @@ class LeagueData:
             for player in matchup.home_lineup:
                 all_players.append(
                     {
+                        "id": player.playerId,
                         "name": player.name,
                         "points": player.points,
                         "position": player.position,
@@ -143,6 +144,7 @@ class LeagueData:
             for player in matchup.away_lineup:
                 all_players.append(
                     {
+                        "id": player.playerId,
                         "name": player.name,
                         "points": player.points,
                         "position": player.position,

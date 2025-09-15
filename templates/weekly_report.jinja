@@ -510,8 +510,9 @@
     {% for player in players if player.slot_position != 'BE' %}
         <div class="player-breakdown">
             <div class="player-info">
-                <div>
-                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />
+                <div class="player-details-line">
+                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
+                    <div class="player-headshot"><img loading="lazy" height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"></div>
                     <strong>{{ player.name }}</strong> ({{ player.position }})
                 </div>
                 <div class="player-total-points">
@@ -553,8 +554,9 @@
     {% for player in players if player.slot_position == 'BE' %}
         <div class="player-breakdown">
             <div class="player-info">
-                <div>
-                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />
+                <div class="player-details-line">
+                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
+                    <div class="player-headshot"><img height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"><img height="35px" src="https://a.espncdn.com/combiner/i?img=/games/lm-static/ffl/images/nomug.png&amp;w=96&amp;h=70&amp;cb=1" width="48px" alt="{{ player.name }}" class="fallback"></div>
                     <strong>{{ player.name }}</strong> ({{ player.position }})
                 </div>
                 <div class="player-total-points">

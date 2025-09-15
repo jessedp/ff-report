@@ -267,6 +267,36 @@
         }
 
         {% block extra_css %}{% endblock %}
+    .player-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5em;
+        }
+
+        .player-details-line {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Space between items */
+        }
+
+        .player-info-nfl-logo {
+            width: 30px; /* Increased size */
+            height: auto;
+        }
+
+        .player-headshot {
+            height: 35px;
+            width: 48px;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .player-headshot img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover; /* Ensure image covers the area */
+            border-radius: 5px; /* Optional: slightly rounded corners for headshot */
+        }
     </style>
 </head>
 <body>
