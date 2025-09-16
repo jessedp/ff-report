@@ -5,6 +5,7 @@ import click
 from .reports import WeeklyReport
 from .config import LEAGUE_YEAR, DEFAULT_WEEK
 from .data import LeagueData
+from .game_summary import generate_summary
 
 @click.group()
 def cli():
@@ -93,6 +94,19 @@ def generate_all(year, start, end):
             click.echo(f"Generated report for Week {week_num}: {generated_file}")
         except Exception as e:
             click.echo(f"Error generating report for Week {week_num}: {e}")
+
+@cli.command()
+@click.option('--week', '-w', type=int, default=DEFAULT_WEEK,
+                help='NFL week to generate summary for (0 for current week)')
+def summary(week):
+    """Generate a game summary for a given week."""
+    # Use current week if week is 0
+    effective_week = week
+    if effective_week == 0:
+        effective_week = LeagueData().get_current_week()
+
+    summary_text = generate_summary(effective_week)
+    click.echo(summary_text)
 
 if __name__ == '__main__':
     cli()

@@ -1,0 +1,5 @@
+espn_api
+jinja2
+python-dotenv
+click
+black

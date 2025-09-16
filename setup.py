@@ -10,6 +10,9 @@ setup(
         "jinja2",
         "python-dotenv",
         "click",
+        "openai",
+        "google-generativeai",
+        "pypandoc",
     ],
     entry_points={
         "console_scripts": [
