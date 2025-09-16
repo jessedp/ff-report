@@ -547,11 +547,11 @@
                     <td><img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />{{ player.name }}</td>
                     <td>
                     {% if player.slot_position == 'BE' %}
-                        <span class="clown-large">🤡</span> {{ player.team_abbrev }}
+                        <span class="clown">🤡</span> {{ player.team_abbrev }}
                     {% elif player.team_abbrev == 'FA' %}
-                       <span class="logo-container"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
+                       <span class="logo-container-sm"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
                     {% else %}
-                        <span class="logo-container"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
+                        <span class="logo-container-sm"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
                     {% endif %}
                     </td>
                 </tr>
