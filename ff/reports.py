@@ -352,6 +352,26 @@ class WeeklyReport:
             team_data['grouped_points_breakdown'] = dict(sorted(team_grouped_points_breakdown.items()))
             team_data['detailed_points_breakdown'] = team_detailed_points_breakdown
 
+        # Prepare data for radar charts
+        all_stat_categories = set()
+        for team_name, team_data in players_by_team.items():
+            all_stat_categories.update(team_data['grouped_points_breakdown'].keys())
+        
+        sorted_stat_categories = sorted(list(all_stat_categories))
+
+        for team_name, team_data in players_by_team.items():
+            team_points_data = []
+            for category in sorted_stat_categories:
+                team_points_data.append(team_data['grouped_points_breakdown'].get(category, 0.0))
+            
+            team_data['radar_chart_data'] = {
+                'labels': sorted_stat_categories,
+                'datasets': [{
+                    'label': team_name,
+                    'data': team_points_data
+                }]
+            }
+
         # Prepare template context
         context = {
             "year": self.year,

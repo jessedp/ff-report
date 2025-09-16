@@ -220,6 +220,15 @@
             font-weight: bold;
             font-size: 1.1em;
         }
+
+        .team-chart-toggle {
+            text-align: right;
+        }
+
+        .team-chart-toggle a {
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
         .position-grid {
             display: grid;
             grid-template-columns: 4em 4em auto;
@@ -387,5 +396,19 @@
 </head>
 <body>
     {% block content %}{% endblock %}
+    <script>
+        function showChart(teamId, chartType) {
+            const pieContainer = document.getElementById('pieChartContainer_' + teamId);
+            const radarContainer = document.getElementById('radarChartContainer_' + teamId);
+
+            if (chartType === 'pie') {
+                pieContainer.style.display = 'block';
+                radarContainer.style.display = 'none';
+            } else if (chartType === 'radar') {
+                pieContainer.style.display = 'none';
+                radarContainer.style.display = 'block';
+            }
+        }
+    </script>
 </body>
 </html>

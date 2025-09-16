@@ -585,14 +585,24 @@
         </div>
     </div>
     <hr>
+    <div class="team-chart-toggle">
+        <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'pie'); return false;">🥧</a> |
+        <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'radar'); return false;">🕸️</a>
+    </div>
 
-    <div class="team-points-breakdown-charts">
+    <div id="pieChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts">
         <div style="width: 75%; margin: auto;">
             <canvas id="pointsPieChart_{{ sanitized_team_name }}"></canvas>
         </div>
         <div id="barChartContainer_{{ sanitized_team_name }}" style="display: none; margin-top: 20px;">
             <h3 id="barChartTitle_{{ sanitized_team_name }}" style="text-align: center;"></h3>
             <canvas id="pointsBarChart_{{ sanitized_team_name }}"></canvas>
+        </div>
+    </div>
+
+    <div id="radarChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts" style="display: none;">
+        <div style="width: 75%; margin: auto;">
+            <canvas id="teamRadarChart_{{ sanitized_team_name }}"></canvas>
         </div>
     </div>
 
@@ -646,12 +656,13 @@
                 });
             }
 
-            const barChartContainer = document.getElementById('barChartContainer_{{ sanitized_team_name }}');
-            const barChartTitle = document.getElementById('barChartTitle_{{ sanitized_team_name }}');
-            const barCtx = document.getElementById('pointsBarChart_{{ sanitized_team_name }}');
-            let barChart;
-
             function updateTeamBarChart(category, color, teamId) {
+                const teamDetailedData = {{ players_by_team[team_name].detailed_points_breakdown|tojson }};
+                const barChartContainer = document.getElementById('barChartContainer_' + teamId);
+                const barChartTitle = document.getElementById('barChartTitle_' + teamId);
+                const barCtx = document.getElementById('pointsBarChart_' + teamId);
+                let barChart = Chart.getChart(barCtx);
+
                 const categoryData = teamDetailedData.filter(d => d.category === category);
 
                 categoryData.sort((a, b) => b.total_points - a.total_points);
@@ -667,7 +678,7 @@
                 }
 
                 if (barCtx) {
-                    barChart = new Chart(barCtx.getContext('2d'), {
+                    new Chart(barCtx.getContext('2d'), {
                         type: 'bar',
                         data: {
                             labels: labels,
@@ -691,6 +702,56 @@
                         }
                     });
                 }
+            }
+
+            const radarCtx = document.getElementById('teamRadarChart_{{ sanitized_team_name }}');
+            if (radarCtx) {
+                const radarChartData = {{ team_data.radar_chart_data|tojson }};
+                const baseColors = [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#7FDBDA', '#FF9F40',
+                    '#FFB3C1', '#A3D9B1', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00'
+                ];
+                const color = baseColors[{{ loop.index0 }} % baseColors.length];
+
+                new Chart(radarCtx.getContext('2d'), {
+                    type: 'radar',
+                    data: {
+                        labels: radarChartData.labels,
+                        datasets: [{
+                            label: radarChartData.datasets[0].label,
+                            data: radarChartData.datasets[0].data,
+                            backgroundColor: transparentize(color, 0.2),
+                            borderColor: color,
+                            pointBackgroundColor: color,
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: color
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Points by Category'
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: false
+                                },
+                                suggestedMin: 0,
+                                ticks: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
             }
         });
     </script>
