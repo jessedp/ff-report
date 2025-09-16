@@ -83,8 +83,8 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>Rank</th>
-                <th>Record</th>
+                <th>#</th>
+                <th>Rec</th>
                 <th>Div</th>
                 <th>Team</th>
                 <th class="text-right">PF</th>
@@ -117,7 +117,7 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>Rank</th>
+                <th>#</th>
                 <th>Score</th>
                 <th>Div</th>
                 <th>Team</th>
@@ -167,7 +167,7 @@
             {% if largest_weekly_margin %}
             <tr>
                 <td>Margin of Victory</td>
-                <td>{{ largest_weekly_margin.winner_name }} ({{ largest_weekly_margin.winner_score|round(2) }}-{{ largest_weekly_margin.loser_score|round(2) }})</td>
+                <td>{{ largest_weekly_margin.winner_name }} ({{ largest_weekly_margin.winner_score|round(2) }} - {{ largest_weekly_margin.loser_score|round(2) }})</td>
                 <td>{{ largest_weekly_margin.margin|round(2) }}</td>
             </tr>
             {% endif %}
@@ -196,7 +196,7 @@
             {% if largest_season_margin %}
             <tr>
                 <td>Margin of Victory</td>
-                <td>{{ largest_season_margin.winner_name }} ({{ largest_season_margin.winner_score|round(2) }}-{{ largest_season_margin.loser_score|round(2) }})</td>
+                <td>{{ largest_season_margin.winner_name }} ({{ largest_season_margin.winner_score|round(2) }} - {{ largest_season_margin.loser_score|round(2) }})</td>
                 <td>{{ largest_season_margin.margin|round(2) }}</td>
             </tr>
             {% endif %}
@@ -212,9 +212,9 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th class="text-center">Rank</th>
+                <th class="text-center">#</th>
                 <th class="text-right">Score</th>
-                <th class="text-center">Result</th>
+                <th class="text-center">?</th>
                 <th>Div</th>
                 <th>Team</th>
             </tr>
@@ -246,9 +246,9 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th class="text-center">Rank</th>
-                <th class="text-right">Max Score</th>
-                <th class="text-center">Result</th>
+                <th class="text-center">#</th>
+                <th class="text-right">Score</th>
+                <th class="text-center">?</th>
                 <th>Div</th>
                 <th>Team</th>
             </tr>
@@ -280,9 +280,9 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th class="text-center">Rank</th>
+                <th class="text-center">#</th>
                 <th class="text-right">Score</th>
-                <th class="text-center">Result</th>
+                <th class="text-center">?</th>
                 <th>Div</th>
                 <th>Team</th>
             </tr>
@@ -495,7 +495,7 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th class="text-center">Rank</th>
+                <th class="text-center">#</th>
                 <th class="text-right">Score</th>
                 <th>Pos.</th>
                 <th>Player</th>
@@ -533,7 +533,7 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th class="text-center">Rank</th>
+                    <th class="text-center">#</th>
                     <th class="text-right">Score</th>
                     <th>Player</th>
                     <th>Team</th>
