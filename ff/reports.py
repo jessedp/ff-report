@@ -153,6 +153,58 @@ class WeeklyReport:
         # Sort weekly scores by score (highest first)
         weekly_scores.sort(key=lambda x: x["score"], reverse=True)
 
+        # --- Margin of Victory ---
+        team_abbrev_to_name = {team.team_abbrev: team.team_name for team in self.data.league.teams}
+
+        largest_weekly_margin = None
+        max_weekly_margin = -1
+
+        for matchup in matchups:
+            margin = abs(matchup['home_team']['score'] - matchup['away_team']['score'])
+            if margin > max_weekly_margin:
+                max_weekly_margin = margin
+                if matchup['winner'] == 'home':
+                    winner = matchup['home_team']
+                    loser = matchup['away_team']
+                else:
+                    winner = matchup['away_team']
+                    loser = matchup['home_team']
+                
+                winner_name = team_abbrev_to_name.get(winner['abbrev'])
+                
+                largest_weekly_margin = {
+                    'winner_name': winner_name,
+                    'winner_score': winner['score'],
+                    'loser_score': loser['score'],
+                    'margin': margin
+                }
+
+        largest_season_margin = None
+        max_season_margin = -1
+
+        for w in range(1, week + 1):
+            weekly_box_scores = self.data.get_box_scores(w)
+            weekly_matchups = calculate_matchups(weekly_box_scores)
+            for matchup in weekly_matchups:
+                margin = abs(matchup['home_team']['score'] - matchup['away_team']['score'])
+                if margin > max_season_margin:
+                    max_season_margin = margin
+                    if matchup['winner'] == 'home':
+                        winner = matchup['home_team']
+                        loser = matchup['away_team']
+                    else:
+                        winner = matchup['away_team']
+                        loser = matchup['home_team']
+                    
+                    winner_name = team_abbrev_to_name.get(winner['abbrev'])
+                    
+                    largest_season_margin = {
+                        'winner_name': winner_name,
+                        'winner_score': winner['score'],
+                        'loser_score': loser['score'],
+                        'margin': margin
+                    }
+
         # --- Logo Caching ---
         for matchup in matchups:
             matchup["home_team"]["logo"] = cache_logo(
@@ -316,6 +368,8 @@ class WeeklyReport:
             "most_pa": self.data.get_most_points_against(),
             "top_overall_players": top_overall,
             "top_players_by_position": top_by_position,
+            "largest_weekly_margin": largest_weekly_margin,
+            "largest_season_margin": largest_season_margin,
         }
 
         # --- Points Breakdown Refactored ---

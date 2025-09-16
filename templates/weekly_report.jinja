@@ -164,6 +164,13 @@
                 <td>{{ low_week[0].team_name }}</td>
                 <td>{{ low_week[1]|round(2) }}</td>
             </tr>
+            {% if largest_weekly_margin %}
+            <tr>
+                <td>Margin of Victory</td>
+                <td>{{ largest_weekly_margin.winner_name }} ({{ largest_weekly_margin.winner_score|round(2) }}-{{ largest_weekly_margin.loser_score|round(2) }})</td>
+                <td>{{ largest_weekly_margin.margin|round(2) }}</td>
+            </tr>
+            {% endif %}
         </tbody>
         <thead>
             <tr>
@@ -186,6 +193,13 @@
                 <td>{{ most_pa.team_name }}</td>
                 <td>{{ most_pa.points_against|round(2) }}</td>
             </tr>
+            {% if largest_season_margin %}
+            <tr>
+                <td>Margin of Victory</td>
+                <td>{{ largest_season_margin.winner_name }} ({{ largest_season_margin.winner_score|round(2) }}-{{ largest_season_margin.loser_score|round(2) }})</td>
+                <td>{{ largest_season_margin.margin|round(2) }}</td>
+            </tr>
+            {% endif %}
         </tbody>
     </table>
 
@@ -497,11 +511,11 @@
                 <td><img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo" />{{ player.name }}</td>
                 <td>
                     {% if player.slot_position == 'BE' %}
-                        <span class="clown-large">🤡</span> {{ player.team_abbrev }}
+                        <span class="clown">🤡</span> {{ player.team_abbrev }}
                     {% elif player.team_abbrev == 'FA' %}
-                       <span class="logo-container"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
+                       <span class="logo-container-sm"><img class='logo' src='logo_svg/NFL.svg' /> </span> {{ player.team_abbrev }}
                     {% else %}
-                        <span class="logo-container"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
+                        <span class="logo-container-sm"><img class='logo' src='{{ player.team_logo }}' /> </span>{{ player.team_abbrev }}
                     {% endif %}
                 </td>
             </tr>
