@@ -1,10 +1,19 @@
 # Makefile for Fantasy Football App
 
-.PHONY: build deploy dry-run
+.PHONY: build deploy dry-run clean preview
 
-# Build the project by running the build script
+# Build the project for deployment
 build:
-	./build.sh
+	./build.sh build
+
+# Preview a weekly report
+# Usage: make preview WEEK=3
+preview:
+	@if [ -z "$(WEEK)" ]; then \
+		echo "Please specify a week, e.g., make preview WEEK=3"; \
+		exit 1; \
+	fi
+	./build.sh --week $(WEEK)
 
 # Deploy the built dist/ to the remote server
 deploy:
@@ -17,6 +26,3 @@ dry-run:
 # Clean up the dist/ directory
 clean:
 	rm -rf dist/
-
-preview:
-	./preview.sh $(ARGS)

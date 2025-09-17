@@ -3,109 +3,170 @@
 # Exit on error
 set -e
 
-# Create the distribution directory
-rm -rf dist
-mkdir -p dist/reports
+# --- Configuration ---
+PREVIEW_DEST_DIR="preview"
+BUILD_DEST_DIR="dist"
+SUMMARY_SRC_DIR="reports/llm_summary"
 
-# Generate the reports index
-python3 build_index.py
-mv reports.json dist/
-
-# Copy viewer files
-cp viewer/index.html dist/
-cp viewer/style.css dist/
-cp viewer/app.js dist/
-
-# Copy reports
-if [ -d "reports" ] && [ "$(ls -A reports)" ]; then
-    cp -r reports/* dist/reports/
+# --- Argument Parsing ---
+MODE="preview"
+if [ "$1" == "build" ]; then
+    MODE="build"
+    shift
 fi
 
-# Copy images directly into the reports directory
-if [ -d "images" ] && [ "$(ls -A images)" ]; then
-    cp -r images/* dist/reports/
+if [ "$MODE" == "preview" ]; then
+    DEST_DIR=$PREVIEW_DEST_DIR
+    YEAR=$(date +%Y)
+    WEEK=""
+    # Simple parsing for --week and --year
+    while [[ $# -gt 0 ]]; do
+        key="$1"
+        case $key in
+            --week) WEEK="$2"; shift; shift;;
+            --year) YEAR="$2"; shift; shift;;
+            *)
+            shift
+            ;;
+        esac
+    done
+    if [ -z "$WEEK" ]; then
+        echo "Preview mode requires --week <number>"
+        exit 1
+    fi
+else # build mode
+    DEST_DIR=$BUILD_DEST_DIR
 fi
 
-cp fball-16x16.png dist/reports/
-cp fball-32x32.png dist/reports/
-cp jag-16x16.png dist/reports/
+# --- Main Logic ---
 
+# 1. Setup destination directory
+echo "--- Cleaning and creating destination directory: $DEST_DIR ---"
+rm -rf $DEST_DIR
+mkdir -p $DEST_DIR/reports
 
-# Copy cached images
-if [ -d "cache/images" ] && [ "$(ls -A cache/images)" ]; then
-    cp -r cache/images/* dist/reports/
+# 2. Generate/Copy reports
+if [ "$MODE" == "preview" ]; then
+    echo "--- Generating report for Week $WEEK, Year $YEAR ---"
+    OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
+    python3 -m ff weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
+else # build
+    echo "--- Copying existing reports ---"
+    if [ -d "reports" ] && [ "$(ls -A reports)" ]; then
+        cp -r reports/* $DEST_DIR/reports/
+    fi
 fi
 
+# 3. Copy common assets
+echo "--- Copying assets ---"
+cp viewer/index.html viewer/style.css viewer/app.js $DEST_DIR/
+cp fball-*.png jag-*.png $DEST_DIR/reports/ 2>/dev/null || true
+if [ -d "images" ]; then
+    cp -r images/* $DEST_DIR/reports/
+fi
+if [ -d "cache/images" ]; then
+    cp -r cache/images/* $DEST_DIR/reports/
+fi
 
-# Handle LLM summary reports
-SUMMARY_DIR="reports/llm_summary"
+# 4. Handle LLM Summaries
+echo "--- Handling LLM Summaries ---"
 SUMMARY_LINKS_HTML=""
-echo "Checking for summaries in $SUMMARY_DIR..."
-if [ -d "$SUMMARY_DIR" ] && [ "$(ls -A "$SUMMARY_DIR")" ]; then
+if [ -d "$SUMMARY_SRC_DIR" ] && [ "$(ls -A "$SUMMARY_SRC_DIR")" ]; then
     if ! command -v pandoc &> /dev/null; then
-        echo "pandoc could not be found, skipping summary generation."
+        echo "pandoc not found, skipping summary generation."
     else
         echo "pandoc found. Searching for summary files..."
-        SUMMARY_FILES=$(find "$SUMMARY_DIR" -name "*_llm_summary_*.md" -type f -print0 | xargs -0 ls -tr)
+        
+        find_pattern="*_llm_summary_*.md"
+        if [ "$MODE" == "preview" ]; then
+            find_pattern="${YEAR}-week${WEEK}*_llm_summary_*.md"
+        fi
+        SUMMARY_FILES=$(find "$SUMMARY_SRC_DIR" -name "$find_pattern" -type f -print0 | xargs -0 ls -tr)
         
         if [ -n "$SUMMARY_FILES" ] || [ -f "prompt.txt" ]; then
-            mkdir -p dist/reports/summaries
+            mkdir -p "$DEST_DIR/reports/summaries"
             SUMMARY_LINKS_HTML="<div class='section'><div class='section-title'>LLM Summaries & Prompt</div><hr><ol>"
 
             if [ -n "$SUMMARY_FILES" ]; then
-                echo "Found summary files: $SUMMARY_FILES"
                 for md_file in $SUMMARY_FILES; do
-                    echo "Processing summary file: $md_file"
                     html_filename=$(basename "${md_file%.md}.html")
-                    html_filepath="dist/reports/summaries/$html_filename"
-                    echo "Outputting to: $html_filepath"
-
+                    html_filepath="$DEST_DIR/reports/summaries/$html_filename"
                     link_text=$html_filename
                     python3 -m ff.build_summary "$md_file" "$link_text" > "$html_filepath"
-
                     SUMMARY_LINKS_HTML="${SUMMARY_LINKS_HTML}<li><a href='summaries/$html_filename'>${link_text}</a></li>"
                 done
             fi
 
             if [ -f "prompt.txt" ]; then
-                echo "Processing prompt.txt"
                 html_filename="prompt.html"
-                html_filepath="dist/reports/summaries/$html_filename"
-                echo "Outputting to: $html_filepath"
-
+                html_filepath="$DEST_DIR/reports/summaries/$html_filename"
                 link_text="prompt.txt"
                 python3 -m ff.build_summary "prompt.txt" "$link_text" > "$html_filepath"
-
                 SUMMARY_LINKS_HTML="${SUMMARY_LINKS_HTML}<li><a href='summaries/$html_filename'>${link_text}</a></li>"
             fi
 
             SUMMARY_LINKS_HTML="${SUMMARY_LINKS_HTML}</ol></div>"
-        else
-            echo "No summary files or prompt.txt found."
         fi
     fi
-else
-    echo "Summary directory '$SUMMARY_DIR' not found or is empty."
 fi
 
-# Replace placeholder in all generated reports with the links
-echo "Injecting summary links into reports..."
-if [ -d "dist/reports" ]; then
+# 5. Inject LLM links
+if [ -n "$SUMMARY_LINKS_HTML" ]; then
+    echo "--- Injecting summary links into reports ---"
     replacement_file=$(mktemp)
     echo "$SUMMARY_LINKS_HTML" > "$replacement_file"
 
-    find dist/reports -name "*.html" -type f | while read -r report_file; do
-        if [[ "$report_file" != *"dist/reports/summaries/"* ]]; then
-            echo "Injecting links into $report_file"
+    if [ "$MODE" == "preview" ]; then
+        # Inject into the single generated file
+        if [ -f "$OUTPUT_FILE" ]; then
             temp_file=$(mktemp)
-            sed -e "/<!-- SUMMARY_REPORTS_PLACEHOLDER -->/r $replacement_file" -e "s/<!-- SUMMARY_REPORTS_PLACEHOLDER -->//g" "$report_file" > "$temp_file"
-            mv "$temp_file" "$report_file"
+            sed -e "/<!-- SUMMARY_REPORTS_PLACEHOLDER -->/r $replacement_file" -e "s/<!-- SUMMARY_REPORTS_PLACEHOLDER -->//g" "$OUTPUT_FILE" > "$temp_file"
+            mv "$temp_file" "$OUTPUT_FILE"
         fi
-    done
+    else # build
+        # Inject into all report files
+        find "$DEST_DIR/reports" -name "*.html" -type f | while read -r report_file; do
+            if [[ "$report_file" != *"/summaries/"* ]]; then
+                temp_file=$(mktemp)
+                sed -e "/<!-- SUMMARY_REPORTS_PLACEHOLDER -->/r $replacement_file" -e "s/<!-- SUMMARY_REPORTS_PLACEHOLDER -->//g" "$report_file" > "$temp_file"
+                mv "$temp_file" "$report_file"
+            fi
+        done
+    fi
     rm "$replacement_file"
-    echo "Injection complete."
-else
-    echo "dist/reports directory not found for link injection."
 fi
 
-echo "Build complete. The 'dist' directory is ready for deployment."
+# 6. Generate index
+echo "--- Generating reports index ---"
+if [ "$MODE" == "preview" ]; then
+    python3 build_index.py $DEST_DIR/reports $DEST_DIR/reports.json
+else # build
+    python3 build_index.py
+    mv reports.json $DEST_DIR/
+fi
+
+# 7. Final steps (server for preview)
+if [ "$MODE" == "preview" ]; then
+    echo "--- Starting preview server ---"
+    echo "Preview for week $WEEK is ready in the '$DEST_DIR' directory."
+    SERVER_PID=""
+    if ! lsof -i:8000 -sTCP:LISTEN -t >/dev/null; then
+        (cd $DEST_DIR && python3 -m http.server 8000) &
+        SERVER_PID=$!
+        echo "Server started with PID $SERVER_PID."
+    else
+        echo "Server already running on port 8000."
+    fi
+    sleep 1
+    REPORT_URL="http://localhost:8000/index.html#${YEAR}-${WEEK}"
+    echo "Opening $REPORT_URL in your browser..."
+    # xdg-open $REPORT_URL
+    if [ -n "$SERVER_PID" ]; then
+        echo "Press Ctrl+C to stop the server."
+        wait $SERVER_PID
+    else
+        echo "The server is running in a separate process. This script will now exit."
+    fi
+else
+    echo "Build complete. The '$DEST_DIR' directory is ready for deployment."
+fi
