@@ -202,28 +202,22 @@ def main(week: int, year: int, llm_provider_name: str = "openai"):
 
     llm_report = create_llm_report(week, year, provider_instance)
 
-    print("\n--- Generated LLM Report ---\n")
+    print("\n--- Generated LLM Report ---\
+")
     print(llm_report)
 
-    # Save the report to files
+    # Save the report to file
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     report_filename_base = f"{year}-week{week}_llm_summary"
 
-    # reports/YYYY-week(X)x_llm_summary.md
-    reports_dir = "reports"
-    os.makedirs(reports_dir, exist_ok=True)
-    final_report_path = os.path.join(reports_dir, f"{report_filename_base}.md")
-    with open(final_report_path, "w", encoding="utf-8") as f:
+    # ./reports/llm_summary/YYYY-week(X)_llm_summary_{datetime}.md
+    summary_dir = "reports/llm_summary"
+    os.makedirs(summary_dir, exist_ok=True)
+    report_path = os.path.join(summary_dir, f"{report_filename_base}_{timestamp}.md")
+    with open(report_path, "w", encoding="utf-8") as f:
         f.write(llm_report)
-    logging.info(f"LLM report saved to {final_report_path}")
+    logging.info(f"LLM report saved to {report_path}")
 
-    # ./tmp/YYYY-week(X)x_llm_summary_{datetime}.md
-    tmp_dir = "tmp"
-    os.makedirs(tmp_dir, exist_ok=True)
-    tmp_report_path = os.path.join(tmp_dir, f"{report_filename_base}_{timestamp}.md")
-    with open(tmp_report_path, "w", encoding="utf-8") as f:
-        f.write(llm_report)
-    logging.info(f"LLM report saved to {tmp_report_path}")
 
 # Example of how to run this script.
 # You would typically call this from another script or a CLI command.

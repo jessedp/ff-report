@@ -37,7 +37,7 @@ OUTPUT_FILE="$PREVIEW_DIR/reports/${YEAR}-week${WEEK}.html"
 python3 -m ff weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
 
 # Handle LLM summary reports for the previewed week
-SUMMARY_DIR="tmp"
+SUMMARY_DIR="reports/llm_summary"
 SUMMARY_LINKS_HTML=""
 echo "Checking for summaries in $SUMMARY_DIR for week $WEEK of $YEAR..."
 if [ -d "$SUMMARY_DIR" ] && [ "$(ls -A "$SUMMARY_DIR")" ]; then

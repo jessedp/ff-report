@@ -38,7 +38,7 @@ fi
 
 
 # Handle LLM summary reports
-SUMMARY_DIR="tmp"
+SUMMARY_DIR="reports/llm_summary"
 SUMMARY_LINKS_HTML=""
 echo "Checking for summaries in $SUMMARY_DIR..."
 if [ -d "$SUMMARY_DIR" ] && [ "$(ls -A "$SUMMARY_DIR")" ]; then
