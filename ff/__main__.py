@@ -19,11 +19,9 @@ def cli():
               help='NFL week to generate report for (0 for current week)')
 @click.option('--output', '-o', type=str, default=None,
               help='Output file path (defaults to reports/YEAR-weekWEEK.html)')
-@click.option('--open', '-p', is_flag=True, default=False,
-              help='Open the report in a browser after generation')
 @click.option('--force', '-f', is_flag=True, default=False,
               help='Force overwrite of existing report')
-def weekly(year, week, output, open, force):
+def weekly(year, week, output, force):
     """Generate a weekly fantasy football report."""
     report = WeeklyReport(year=year)
 
@@ -54,21 +52,6 @@ def weekly(year, week, output, open, force):
     # The generate function now correctly handles the output path
     generated_file = report.generate(week=week if week != 0 else None, output_file=output)
     click.echo(f"Report generated: {generated_file}")
-
-    if open:
-        # Try to open the file in the default browser
-        try:
-            if os.path.exists('./xdg-open'):
-                subprocess.run(['./xdg-open', generated_file])
-            elif os.name == 'nt':  # Windows
-                os.startfile(generated_file)
-            elif os.name == 'posix':  # macOS or Linux
-                if os.path.exists('/usr/bin/open'):  # macOS
-                    subprocess.run(['open', generated_file])
-                else:  # Linux
-                    subprocess.run(['xdg-open', generated_file])
-        except Exception as e:
-            click.echo(f"Error opening report: {e}")
 
 @cli.command()
 @click.option('--year', '-y', type=int, default=LEAGUE_YEAR,
