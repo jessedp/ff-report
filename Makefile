@@ -8,11 +8,11 @@ build:
 
 # Deploy the built dist/ to the remote server
 deploy:
-	rsync -avz --quiet --delete dist/ ls2:/var/www/tbol/ff/
+	rsync -avz --quiet --delete --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fgo=r  dist/ ls2:/var/www/tbol/ff/
 
 # Dry-run to see what would be deployed without actually doing it
 dry-run:
-	rsync -avz --delete --dry-run dist/ ls2:/var/www/tbol/ff/
+	rsync -avz --delete --dry-run --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fgo=r  dist/ ls2:/var/www/tbol/ff/
 
 # Clean up the dist/ directory
 clean:
