@@ -6,15 +6,7 @@ This project is a Python command-line tool for generating fantasy football repor
 
 *   **Python:** The core language for the application.
 *   **ESPN API:** Uses the `espn-api` library to fetch data from ESPN's fantasy football platform.
-We are using the the espn-api python package. I've cloned the documentation wiki into docs/
-docs/espn-api.wiki/Football-Intro.md
-docs/espn-api.wiki/Box-Player-Class.md
-docs/espn-api.wiki/Player-Class.md
-docs/espn-api.wiki/League-Class.md
-docs/espn-api.wiki/Matchup-Class.md
-docs/espn-api.wiki/Team-Class.md
-
-
+*   **LLM Integration:** Uses OpenAI or Gemini models to generate narrative summaries of the week's events.
 *   **Jinja2:** For templating the HTML reports.
 *   **Click:** For creating the command-line interface.
 *   **python-dotenv:** For managing environment variables for configuration.
@@ -26,8 +18,10 @@ docs/espn-api.wiki/Team-Class.md
 *   `ff/config.py`: Handles configuration, including loading credentials from a `.env` file.
 *   `ff/data.py`: Encapsulates data retrieval from the ESPN API.
 *   `ff/reports.py`: Contains the logic for generating the reports.
+*   `ff/llm_report.py`: Gathers data and uses an LLM to generate a weekly summary.
 *   `ff/stats.py`: Performs statistical calculations.
 *   `templates/`: Contains the Jinja2 HTML templates for the reports.
+*   `build.sh`: Unified script for building the project for deployment and for generating local previews.
 
 # Building and Running
 
@@ -41,7 +35,7 @@ pip install -e .
 
 **2. Configuration:**
 
-Create a `.env` file in the project root (you can copy `.env.example`) and add your ESPN API credentials.
+Create a `.env` file in the project root (you can copy `.env.example`) and add your ESPN API credentials. You will also need to add an API key for either OpenAI (`OPENAI_API_KEY`) or Google Gemini (`GOOGLE_GEMINI_API_KEY`) to use the LLM summary feature.
 
 **3. Running the Application:**
 
@@ -50,13 +44,7 @@ The primary way to run the application is through the `ff` command-line interfac
 **Generate a weekly report:**
 
 ```bash
-ff weekly --open
-```
-
-**Generate a report for a specific week:**
-
-```bash
-ff weekly --week 5 --open
+ff weekly
 ```
 
 **Generate reports for a range of weeks:**
@@ -78,26 +66,36 @@ The project includes a `Makefile` for common development tasks:
 ```makefile
 # Makefile for Fantasy Football App
 
-.PHONY: build deploy dry-run
+.PHONY: build deploy dry-run clean preview
 
-# Build the project by running the build script
+# Build the project for deployment
 build:
-	./build.sh
+	./build.sh build
+
+# Preview a weekly report
+# Usage: make preview WEEK=3
+preview:
+	@if [ -z "$(WEEK)" ]; then \
+		echo "Please specify a week, e.g., make preview WEEK=3"; \
+		exit 1;
+	fi
+	./build.sh --week $(WEEK)
 
 # Deploy the built dist/ to the remote server
 deploy:
-	rsync -avz --delete dist/ ls2:/var/www/tbol/ff/
+	rsync -avz --quiet --delete --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fgo=r  dist/ ls2:/var/www/tbol/ff/
 
 # Dry-run to see what would be deployed without actually doing it
 dry-run:
-	rsync -avz --delete --dry-run dist/ ls2:/var/www/tbol/ff/
+	rsync -avz --delete --dry-run --chmod=Du=rwx,Dg=rx,Do=rx,Fu=rw,Fgo=r  dist/ ls2:/var/www/tbol/ff/
 
 # Clean up the dist/ directory
 clean:
 	rm -rf dist/
 ```
 
-*   `make build`: Builds the report viewer and copies all necessary files to the `dist/` directory.
+*   `make build`: Runs the unified build script to create a production-ready build in the `dist/` directory.
+*   `make preview WEEK=<N>`: Generates a preview for a specific week and starts a local web server.
 *   `make deploy`: Deploys the contents of the `dist/` directory to the production server.
 *   `make dry-run`: Shows which files would be deployed without actually making any changes.
 *   `make clean`: Deletes the `dist/` directory.
@@ -108,6 +106,28 @@ clean:
 *   **Testing:** (TODO: Add information about testing practices if tests are found.)
 *   **Contributions:** (TODO: Add information about contribution guidelines if available.)
 *   **Dependencies:** Project dependencies are managed in `setup.py`.
+
+# Session Summary (Tuesday, September 16, 2025)
+
+This session focused on refactoring the build process and improving documentation.
+
+### Key Accomplishments:
+
+1.  **Build Script Unification:**
+    *   Refactored the separate `build.sh` and `preview.sh` scripts into a single, unified `build.sh` script.
+    *   The new script defaults to a `preview` mode and accepts a `build` argument for creating production builds, reducing code duplication and improving maintainability.
+
+2.  **Makefile Update:**
+    *   Updated the `Makefile` to work with the new `build.sh` script.
+    *   The `build` target now correctly calls `./build.sh build`.
+    *   A new `preview` target was added (`make preview WEEK=<N>`) for easier local previews.
+
+3.  **LLM Report Path Consolidation:**
+    *   Modified `ff/llm_report.py` to save generated summary reports to a single, consistent directory: `reports/llm_summary/`.
+    *   Updated the build and preview logic to source summary reports from this new location.
+
+4.  **Documentation Update:**
+    *   Updated `README.md` and `GEMINI.md` to reflect the new build process, project structure, and LLM-related features.
 
 # Session Summary (Sunday, September 14, 2025)
 
