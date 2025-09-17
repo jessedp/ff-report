@@ -207,12 +207,46 @@ class WeeklyReport:
 
         # --- Logo Caching ---
         for matchup in matchups:
-            matchup["home_team"]["logo"] = cache_logo(
-                matchup["home_team"]["logo"]
-            )
-            matchup["away_team"]["logo"] = cache_logo(
-                matchup["away_team"]["logo"]
-            )
+            if "logo" in matchup["home_team"]:
+                matchup["home_team"]["logo"] = cache_logo(
+                    matchup["home_team"]["logo"]
+                )
+            if "logo" in matchup["away_team"]:
+                matchup["away_team"]["logo"] = cache_logo(
+                    matchup["away_team"]["logo"]
+                )
+
+        for score in weekly_scores:
+            if "logo" in score:
+                score["logo"] = cache_logo(score["logo"])
+
+        standings = self.data.get_standings()
+        for team in standings:
+            team.logo = cache_logo(team.logo_url)
+
+        power_rankings = self.data.get_power_rankings(week)
+        for rank in power_rankings:
+            rank[1].logo = cache_logo(rank[1].logo_url)
+
+        top_week = self.data.get_top_scored_week()
+        if top_week and top_week[0]:
+            top_week[0].logo = cache_logo(top_week[0].logo_url)
+
+        low_week = self.data.get_least_scored_week()
+        if low_week and low_week[0]:
+            low_week[0].logo = cache_logo(low_week[0].logo_url)
+
+        top_scorer = self.data.get_top_scorer()
+        if top_scorer:
+            top_scorer.logo = cache_logo(top_scorer.logo_url)
+
+        low_scorer = self.data.get_least_scorer()
+        if low_scorer:
+            low_scorer.logo = cache_logo(low_scorer.logo_url)
+
+        most_pa = self.data.get_most_points_against()
+        if most_pa:
+            most_pa.logo = cache_logo(most_pa.logo_url)
 
         # Get top player stats
         all_players = self.data.get_weekly_players(week)
@@ -379,13 +413,13 @@ class WeeklyReport:
             "matchups": matchups,
             "weekly_scores": weekly_scores,
             "players_by_team": players_by_team, # New data structure
-            "standings": self.data.get_standings(),
-            "power_rankings": self.data.get_power_rankings(week),
-            "top_week": self.data.get_top_scored_week(),
-            "low_week": self.data.get_least_scored_week(),
-            "top_scorer": self.data.get_top_scorer(),
-            "low_scorer": self.data.get_least_scorer(),
-            "most_pa": self.data.get_most_points_against(),
+            "standings": standings,
+            "power_rankings": power_rankings,
+            "top_week": top_week,
+            "low_week": low_week,
+            "top_scorer": top_scorer,
+            "low_scorer": low_scorer,
+            "most_pa": most_pa,
             "top_overall_players": top_overall,
             "top_players_by_position": top_by_position,
             "largest_weekly_margin": largest_weekly_margin,

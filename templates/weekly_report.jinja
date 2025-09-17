@@ -83,7 +83,7 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>#</th>
+                <th class="text-center">#</th>
                 <th>Rec</th>
                 <th>Div</th>
                 <th>Team</th>
@@ -96,8 +96,8 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ team.wins }} - {{ team.losses }}</td>
-                <td><em>{{ div_images[team.division_name[:1]]|safe }}</em></td>
-                <td>{{ team.team_name }}</td>
+                <td class="text-center"><em>{{ div_images[team.division_name[:1]]|safe }}</em></td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ team.logo }}' /> </span>{{ team.team_name }}</td>
                 <td class="text-right">{{ team.points_for|format_score }}</td>
                 <td class="text-right">{{ team.points_against|format_score }}</td>
             </tr>
@@ -117,19 +117,19 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Score</th>
-                <th>Div</th>
+                <th class="text-center">#</th>
+                <th class="text-right">Score</th>
+                <th class="text-center">Div</th>
                 <th>Team</th>
             </tr>
         </thead>
         <tbody>
             {% for rank in power_rankings %}
             <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ rank[0]|format_score }}</td>
-                <td><em>{{ div_images[rank[1].division_name[:1]]|safe }}</em></td>
-                <td>{{ rank[1].team_name }}</td>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-right">{{ rank[0]|format_score }}</td>
+                <td class="text-center"><em>{{ div_images[rank[1].division_name[:1]]|safe }}</em></td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ rank[1].logo }}' /> </span>{{ rank[1].team_name }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -156,12 +156,12 @@
         <tbody>
             <tr>
                 <td>Highest scoring week</td>
-                <td>{{ top_week[0].team_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ top_week[0].logo }}' /> </span>{{ top_week[0].team_name }}</td>
                 <td>{{ top_week[1]|round(2) }}</td>
             </tr>
             <tr>
                 <td>Lowest scoring week</td>
-                <td>{{ low_week[0].team_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ low_week[0].logo }}' /> </span>{{ low_week[0].team_name }}</td>
                 <td>{{ low_week[1]|round(2) }}</td>
             </tr>
             {% if largest_weekly_margin %}
@@ -180,17 +180,17 @@
         <tbody>
             <tr>
                 <td>Top Scorer</td>
-                <td>{{ top_scorer.team_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ top_scorer.logo }}' /> </span>{{ top_scorer.team_name }}</td>
                 <td>{{ top_scorer.points_for|round(2) }}</td>
             </tr>
             <tr>
                 <td>Low Scorer</td>
-                <td>{{ low_scorer.team_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ low_scorer.logo }}' /> </span>{{ low_scorer.team_name }}</td>
                 <td>{{ low_scorer.points_for|round(2) }}</td>
             </tr>
             <tr>
                 <td>Most Points Against</td>
-                <td>{{ most_pa.team_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ most_pa.logo }}' /> </span>{{ most_pa.team_name }}</td>
                 <td>{{ most_pa.points_against|round(2) }}</td>
             </tr>
             {% if largest_season_margin %}
@@ -231,8 +231,8 @@
                         <span class="result-loss">L</span>
                     {% endif %}
                 </td>
-                <td>{{ div_images[score.division]|safe }}</td>
-                <td>{{ score.name }}</td>
+                <td class="text-center">{{ div_images[score.division]|safe }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ score.logo }}' /> </span>{{ score.name }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -265,8 +265,8 @@
                         <span class="result-loss">L</span>
                     {% endif %}
                 </td>
-                <td>{{ div_images[score.division]|safe }}</td>
-                <td>{{ score.name }}</td>
+                <td class="text-center">{{ div_images[score.division]|safe }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ score.logo }}' /> </span>{{ score.name }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -299,8 +299,8 @@
                         <span class="result-loss">L</span>
                     {% endif %}
                 </td>
-                <td>{{ div_images[score.division]|safe }}</td>
-                <td>{{ score.name }}</td>
+                <td class="text-center">{{ div_images[score.division]|safe }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ score.logo }}' /> </span>{{ score.name }}</td>
             </tr>
             {% endfor %}
         </tbody>
