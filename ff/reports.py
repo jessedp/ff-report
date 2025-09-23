@@ -4,6 +4,8 @@ import os
 import hashlib
 import urllib.request
 import shutil
+from datetime import timedelta, datetime
+from pathlib import Path
 from .data import LeagueData
 from .stat_category_map import STAT_CATEGORY_LOOKUP
 from espn_api.football.constant import SETTINGS_SCORING_FORMAT_MAP, PLAYER_STATS_MAP
@@ -15,6 +17,8 @@ from .stats import (
 )
 from .templates import TemplateEngine
 from .config import LEAGUE_YEAR, SWID, ESPN_S2
+from .features.beef import BeefFeature
+from .features.high_roller import HighRollerFeature
 
 
 def cache_logo(logo_url):
@@ -82,9 +86,10 @@ def cache_logo(logo_url):
             req = urllib.request.Request(
                 logo_url_to_download, headers=headers
             )  # Use the URL we decided to download
-            with urllib.request.urlopen(req) as response, open(
-                local_path, "wb"
-            ) as out_file:
+            with (
+                urllib.request.urlopen(req) as response,
+                open(local_path, "wb") as out_file,
+            ):
                 shutil.copyfileobj(response, out_file)
         except Exception as e:
             print(
@@ -92,9 +97,7 @@ def cache_logo(logo_url):
             )  # Print the URL that failed
             # Fallback to default image
             default_logo_filename = "placeholder.png"
-            default_logo_source_path = os.path.join(
-                "images", default_logo_filename
-            )
+            default_logo_source_path = os.path.join("images", default_logo_filename)
 
             try:
                 shutil.copy(
@@ -107,9 +110,7 @@ def cache_logo(logo_url):
                 )
                 return None
             except Exception as copy_e:
-                print(
-                    f"Error copying default logo to cache: {copy_e}. Returning None."
-                )
+                print(f"Error copying default logo to cache: {copy_e}. Returning None.")
                 return None
 
     return filename
@@ -127,6 +128,80 @@ class WeeklyReport:
         self.year = year
         self.data = LeagueData(year)
         self.template = TemplateEngine()
+        self.root_dir = Path(__file__).parent.parent
+
+    def get_zodiac_emoji(self, birth_date_str):
+        """Get zodiac emoji based on birth date string"""
+        if not birth_date_str:
+            return ""
+
+        try:
+            from datetime import datetime
+
+            # Parse birth date (assuming it could be various formats)
+            if isinstance(birth_date_str, int):
+                # Convert timestamp to date if it's an integer
+                birth_date = (
+                    datetime.fromtimestamp(birth_date_str / 1000).date()
+                    if birth_date_str > 100000000
+                    else datetime.fromtimestamp(birth_date_str).date()
+                )
+            elif isinstance(birth_date_str, str):
+                # Try parsing as YYYY-MM-DD format
+                birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d").date()
+            else:
+                return ""
+
+            month = birth_date.month
+            day = birth_date.day
+
+            # Zodiac sign calculation based on month and day
+            if (month == 3 and day >= 21) or (month == 4 and day <= 19):
+                return "♈"  # Aries
+            elif (month == 4 and day >= 20) or (month == 5 and day <= 20):
+                return "♉"  # Taurus
+            elif (month == 5 and day >= 21) or (month == 6 and day <= 20):
+                return "♊"  # Gemini
+            elif (month == 6 and day >= 21) or (month == 7 and day <= 22):
+                return "♋"  # Cancer
+            elif (month == 7 and day >= 23) or (month == 8 and day <= 22):
+                return "♌"  # Leo
+            elif (month == 8 and day >= 23) or (month == 9 and day <= 22):
+                return "♍"  # Virgo
+            elif (month == 9 and day >= 23) or (month == 10 and day <= 22):
+                return "♎"  # Libra
+            elif (month == 10 and day >= 23) or (month == 11 and day <= 21):
+                return "♏"  # Scorpio
+            elif (month == 11 and day >= 22) or (month == 12 and day <= 21):
+                return "♐"  # Sagittarius
+            elif (month == 12 and day >= 22) or (month == 1 and day <= 19):
+                return "♑"  # Capricorn
+            elif (month == 1 and day >= 20) or (month == 2 and day <= 18):
+                return "♒"  # Aquarius
+            elif (month == 2 and day >= 19) or (month == 3 and day <= 20):
+                return "♓"  # Pisces
+            else:
+                return ""
+        except (ValueError, TypeError, AttributeError):
+            return ""
+
+    def get_zodiac_name(self, zodiac_emoji):
+        """Get zodiac name from emoji"""
+        zodiac_names = {
+            "♈": "Aries",
+            "♉": "Taurus",
+            "♊": "Gemini",
+            "♋": "Cancer",
+            "♌": "Leo",
+            "♍": "Virgo",
+            "♎": "Libra",
+            "♏": "Scorpio",
+            "♐": "Sagittarius",
+            "♑": "Capricorn",
+            "♒": "Aquarius",
+            "♓": "Pisces",
+        }
+        return zodiac_names.get(zodiac_emoji, "")
 
     def generate(self, week=None, output_file=None):
         """Generate a weekly report
@@ -147,6 +222,17 @@ class WeeklyReport:
 
         # Get all the data for the report
         box_scores = self.data.get_box_scores(week)
+
+        # Determine the Monday date for the current week based on the first game's date
+        # Assuming game_date is a datetime object and the first game is representative of the week
+        first_game_date = box_scores[0].home_lineup[0].game_date.date()
+        # Calculate the Monday of that week (Monday is weekday 0)
+        week_monday_date = first_game_date - timedelta(
+            days=first_game_date.weekday() - 0
+        )
+        # Adjust to the Monday *after* the current week
+        target_monday_date = week_monday_date + timedelta(days=7)
+
         matchups = calculate_matchups(box_scores)
         weekly_scores = calculate_weekly_scores(box_scores)
 
@@ -154,29 +240,31 @@ class WeeklyReport:
         weekly_scores.sort(key=lambda x: x["score"], reverse=True)
 
         # --- Margin of Victory ---
-        team_abbrev_to_name = {team.team_abbrev: team.team_name for team in self.data.league.teams}
+        team_abbrev_to_name = {
+            team.team_abbrev: team.team_name for team in self.data.league.teams
+        }
 
         largest_weekly_margin = None
         max_weekly_margin = -1
 
         for matchup in matchups:
-            margin = abs(matchup['home_team']['score'] - matchup['away_team']['score'])
+            margin = abs(matchup["home_team"]["score"] - matchup["away_team"]["score"])
             if margin > max_weekly_margin:
                 max_weekly_margin = margin
-                if matchup['winner'] == 'home':
-                    winner = matchup['home_team']
-                    loser = matchup['away_team']
+                if matchup["winner"] == "home":
+                    winner = matchup["home_team"]
+                    loser = matchup["away_team"]
                 else:
-                    winner = matchup['away_team']
-                    loser = matchup['home_team']
-                
-                winner_name = team_abbrev_to_name.get(winner['abbrev'])
-                
+                    winner = matchup["away_team"]
+                    loser = matchup["home_team"]
+
+                winner_name = team_abbrev_to_name.get(winner["abbrev"])
+
                 largest_weekly_margin = {
-                    'winner_name': winner_name,
-                    'winner_score': winner['score'],
-                    'loser_score': loser['score'],
-                    'margin': margin
+                    "winner_name": winner_name,
+                    "winner_score": winner["score"],
+                    "loser_score": loser["score"],
+                    "margin": margin,
                 }
 
         largest_season_margin = None
@@ -186,35 +274,33 @@ class WeeklyReport:
             weekly_box_scores = self.data.get_box_scores(w)
             weekly_matchups = calculate_matchups(weekly_box_scores)
             for matchup in weekly_matchups:
-                margin = abs(matchup['home_team']['score'] - matchup['away_team']['score'])
+                margin = abs(
+                    matchup["home_team"]["score"] - matchup["away_team"]["score"]
+                )
                 if margin > max_season_margin:
                     max_season_margin = margin
-                    if matchup['winner'] == 'home':
-                        winner = matchup['home_team']
-                        loser = matchup['away_team']
+                    if matchup["winner"] == "home":
+                        winner = matchup["home_team"]
+                        loser = matchup["away_team"]
                     else:
-                        winner = matchup['away_team']
-                        loser = matchup['home_team']
-                    
-                    winner_name = team_abbrev_to_name.get(winner['abbrev'])
-                    
+                        winner = matchup["away_team"]
+                        loser = matchup["home_team"]
+
+                    winner_name = team_abbrev_to_name.get(winner["abbrev"])
+
                     largest_season_margin = {
-                        'winner_name': winner_name,
-                        'winner_score': winner['score'],
-                        'loser_score': loser['score'],
-                        'margin': margin
+                        "winner_name": winner_name,
+                        "winner_score": winner["score"],
+                        "loser_score": loser["score"],
+                        "margin": margin,
                     }
 
         # --- Logo Caching ---
         for matchup in matchups:
             if "logo" in matchup["home_team"]:
-                matchup["home_team"]["logo"] = cache_logo(
-                    matchup["home_team"]["logo"]
-                )
+                matchup["home_team"]["logo"] = cache_logo(matchup["home_team"]["logo"])
             if "logo" in matchup["away_team"]:
-                matchup["away_team"]["logo"] = cache_logo(
-                    matchup["away_team"]["logo"]
-                )
+                matchup["away_team"]["logo"] = cache_logo(matchup["away_team"]["logo"])
 
         for score in weekly_scores:
             if "logo" in score:
@@ -248,24 +334,130 @@ class WeeklyReport:
         if most_pa:
             most_pa.logo = cache_logo(most_pa.logo_url)
 
-        # Get top player stats
+        # Initialize features
+        feature_cache_dir = Path("cache/features")
+        beef_feature = BeefFeature(data_dir=feature_cache_dir)
+        high_roller_feature = HighRollerFeature(
+            season=self.year, data_dir=feature_cache_dir
+        )
         all_players = self.data.get_weekly_players(week)
         for player in all_players:
             player["team_logo"] = cache_logo(player["team_logo"])
+            player["pro_team_logo"] = cache_logo(
+                f"images/logo_svg/{player['pro_team']}.svg"
+            )
+
+            # Add feature stats
+            name_parts = player["name"].split()
+            first_name = name_parts[0] if name_parts else ""
+            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
+            player["beef_weight"] = beef_feature.get_player_weight(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            player["beef_height"] = beef_feature.get_player_height(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+            player["beef_tabbu"] = beef_feature.get_player_tabbu(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            player["beef_height_inches"] = beef_feature.get_player_height_inches(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            player["beef_years_exp"] = beef_feature.get_player_years_exp(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            player["beef_age"] = beef_feature.get_player_age(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            player["beef_birth_date"] = beef_feature.get_player_birth_date(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
+
+            # Calculate zodiac sign
+            player["zodiac_emoji"] = self.get_zodiac_emoji(player["beef_birth_date"])
+
+            player["high_roller_fines"] = high_roller_feature.get_player_fines_total(
+                first_name, last_name, player["pro_team"], player["position"]
+            )
         top_overall, top_by_position = calculate_top_players(all_players)
 
+        # --- Upcoming & Recent Birthdays ---
+        upcoming_recent_birthdays = []
+        seven_days_ago = target_monday_date - timedelta(days=7)
+        seven_days_from_now = target_monday_date + timedelta(days=7)
+
+        for player in all_players:
+            # Only consider players on fantasy teams (not free agents)
+            if player["team_abbrev"] != "FA" and player["beef_birth_date"]:
+                try:
+                    # Parse birth date string (assuming YYYY-MM-DD format)
+                    birth_date_obj = datetime.strptime(
+                        player["beef_birth_date"], "%Y-%m-%d"
+                    ).date()
+
+                    # Create a birthday for the current year of the report week
+                    current_year_birthday = birth_date_obj.replace(
+                        year=target_monday_date.year
+                    )
+
+                    # Adjust for birthdays that might have just passed in the previous year
+                    # or are coming up in the next year, relative to the current week's year
+                    if current_year_birthday < seven_days_ago:
+                        current_year_birthday = current_year_birthday.replace(
+                            year=target_monday_date.year + 1
+                        )
+                    elif current_year_birthday > seven_days_from_now:
+                        current_year_birthday = current_year_birthday.replace(
+                            year=target_monday_date.year - 1
+                        )
+
+                    # Check if the birthday falls within the 14-day window
+                    if seven_days_ago <= current_year_birthday <= seven_days_from_now:
+                        upcoming_recent_birthdays.append(
+                            {
+                                "name": player["name"],
+                                "team_name": player["team_name"],
+                                "team_logo": player["team_logo"],  # Fantasy team logo
+                                "pro_team_logo": player[
+                                    "pro_team_logo"
+                                ],  # Pro team logo
+                                "position": player["position"],
+                                "birth_date": current_year_birthday.strftime(
+                                    "%b %d"
+                                ),  # Format as 'Mon DD'
+                            }
+                        )
+                except ValueError:
+                    # Handle cases where birth_date might not be in expected format
+                    pass
+
+        # Sort birthdays by date (descending)
+        upcoming_recent_birthdays.sort(
+            key=lambda x: datetime.strptime(x["birth_date"], "%b %d").replace(
+                year=target_monday_date.year
+            ),
+            reverse=True,
+        )
+
         # --- New Points Per Player Per Position ---
-        
+
         # Helper for sorting players
         pos_order = ["QB", "RB", "WR", "TE", "FLEX", "D/ST", "K", "P"]
+
         def get_player_sort_key(player):
-            slot = player['slot_position']
-            if slot == 'BE':
-                return (1, 0) # Bench players last
+            slot = player["slot_position"]
+            if slot == "BE":
+                return (1, 0)  # Bench players last
             try:
                 return (0, pos_order.index(slot))
             except ValueError:
-                return (0, len(pos_order)) # Other starters after defined order
+                return (0, len(pos_order))  # Other starters after defined order
 
         # Group players by team
         players_by_team = {}
@@ -273,138 +465,514 @@ class WeeklyReport:
         team_name_to_object = {team.team_name: team for team in self.data.league.teams}
 
         for player in all_players:
-            if player['team_abbrev'] != 'FA':
-                team_name = player['team_name']
+            if player["team_abbrev"] != "FA":
+                team_name = player["team_name"]
                 if team_name not in players_by_team:
                     players_by_team[team_name] = {
-                        'team_object': team_name_to_object.get(team_name), # Add the Team object here
-                        'players': [],
-                        'grouped_points_breakdown': {},
-                        'detailed_points_breakdown': []
+                        "team_object": team_name_to_object.get(
+                            team_name
+                        ),  # Add the Team object here
+                        "players": [],
+                        "grouped_points_breakdown": {},
+                        "detailed_points_breakdown": [],
                     }
-                players_by_team[team_name]['players'].append(player)
+                players_by_team[team_name]["players"].append(player)
 
         # Process stats for each player and sort
         stat_name_to_id_map = {v: int(k) for k, v in PLAYER_STATS_MAP.items()}
         for team_name, team_data in players_by_team.items():
-            for player in team_data['players']:
+            for player in team_data["players"]:
                 # Normalize stats table
-                actual_breakdown = player.get('points_breakdown') or {}
-                proj_breakdown = player.get('projected_points_breakdown') or {}
-                
-                all_stat_names = set(actual_breakdown.keys()) | set(proj_breakdown.keys())
-                
-                stat_ids = [stat_name_to_id_map.get(name) for name in all_stat_names if stat_name_to_id_map.get(name) is not None]
-                
+                actual_breakdown = player.get("points_breakdown") or {}
+                proj_breakdown = player.get("projected_points_breakdown") or {}
+
+                all_stat_names = set(actual_breakdown.keys()) | set(
+                    proj_breakdown.keys()
+                )
+
+                stat_ids = [
+                    stat_name_to_id_map.get(name)
+                    for name in all_stat_names
+                    if stat_name_to_id_map.get(name) is not None
+                ]
+
                 # Create a list of stat info objects to sort by abbr
                 stats_to_display = []
                 for stat_id in stat_ids:
                     stat_name = PLAYER_STATS_MAP.get(stat_id)
                     header_info = SETTINGS_SCORING_FORMAT_MAP.get(stat_id, {})
-                    stats_to_display.append({
-                        'id': stat_id,
-                        'name': stat_name,
-                        'abbr': header_info.get('abbr', stat_name or str(stat_id)),
-                        'label': header_info.get('label', stat_name or str(stat_id))
-                    })
-                
-                stats_to_display.sort(key=lambda x: x['abbr'])
+                    stats_to_display.append(
+                        {
+                            "id": stat_id,
+                            "name": stat_name,
+                            "abbr": header_info.get("abbr", stat_name or str(stat_id)),
+                            "label": header_info.get(
+                                "label", stat_name or str(stat_id)
+                            ),
+                        }
+                    )
+
+                stats_to_display.sort(key=lambda x: x["abbr"])
 
                 headers = []
                 actual_row = []
                 proj_row = []
 
                 for stat_info in stats_to_display:
-                    stat_name = stat_info['name']
-                    
-                    headers.append({
-                        'abbr': stat_info['abbr'],
-                        'label': stat_info['label']
-                    })
-                    
+                    stat_name = stat_info["name"]
+
+                    headers.append(
+                        {"abbr": stat_info["abbr"], "label": stat_info["label"]}
+                    )
+
                     actual_pts = actual_breakdown.get(stat_name, 0.0)
                     proj_pts = proj_breakdown.get(stat_name, 0.0)
-                    
-                    actual_style = ''
-                    proj_style = ''
-                    if actual_pts == proj_pts:
-                        actual_style = 'light-blue'
-                        proj_style = 'light-blue'
-                    elif actual_pts > proj_pts:
-                        actual_style = 'light-green'
-                    else:
-                        proj_style = 'light-red'
-                    
-                    actual_row.append({'value': actual_pts, 'style': actual_style})
-                    proj_row.append({'value': proj_pts, 'style': proj_style})
 
-                player['stats_table'] = {
-                    'headers': headers,
-                    'actual': actual_row,
-                    'projected': proj_row
+                    actual_style = ""
+                    proj_style = ""
+                    if actual_pts == proj_pts:
+                        actual_style = "light-blue"
+                        proj_style = "light-blue"
+                    elif actual_pts > proj_pts:
+                        actual_style = "light-green"
+                    else:
+                        proj_style = "light-red"
+
+                    actual_row.append({"value": actual_pts, "style": actual_style})
+                    proj_row.append({"value": proj_pts, "style": proj_style})
+
+                player["stats_table"] = {
+                    "headers": headers,
+                    "actual": actual_row,
+                    "projected": proj_row,
                 }
 
-            team_data['players'].sort(key=get_player_sort_key)
+            team_data["players"].sort(key=get_player_sort_key)
 
         # Calculate team-specific points breakdowns
         for team_name, team_data in players_by_team.items():
-            team_all_players = team_data['players']
+            team_all_players = team_data["players"]
             team_aggregated_points_by_id = {}
 
             for player in team_all_players:
-                if player["slot_position"] == "BE": # Only consider starters for team breakdown
+                if (
+                    player["slot_position"] == "BE"
+                ):  # Only consider starters for team breakdown
                     continue
                 if "points_breakdown" in player and player["points_breakdown"]:
                     for stat_name, points in player["points_breakdown"].items():
-                        if isinstance(stat_name, str) and isinstance(points, (int, float)):
+                        if isinstance(stat_name, str) and isinstance(
+                            points, (int, float)
+                        ):
                             stat_id = stat_name_to_id_map.get(stat_name)
                             if stat_id:
-                                team_aggregated_points_by_id[stat_id] = team_aggregated_points_by_id.get(stat_id, 0.0) + points
+                                team_aggregated_points_by_id[stat_id] = (
+                                    team_aggregated_points_by_id.get(stat_id, 0.0)
+                                    + points
+                                )
 
             team_detailed_points_breakdown = []
             for stat_id, total_points in team_aggregated_points_by_id.items():
                 stat_name = PLAYER_STATS_MAP.get(int(stat_id))
-                category = STAT_CATEGORY_LOOKUP.get(stat_name, "Other") if stat_name else "Other"
+                category = (
+                    STAT_CATEGORY_LOOKUP.get(stat_name, "Other")
+                    if stat_name
+                    else "Other"
+                )
                 try:
-                    label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get('label', stat_name or stat_id)
+                    label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get(
+                        "label", stat_name or stat_id
+                    )
                 except (ValueError, TypeError):
                     label = stat_name or stat_id
 
-                team_detailed_points_breakdown.append({
-                    'label': label,
-                    'category': category,
-                    'total_points': total_points
-                })
+                team_detailed_points_breakdown.append(
+                    {"label": label, "category": category, "total_points": total_points}
+                )
 
-            team_detailed_points_breakdown.sort(key=lambda x: (x['category'], x['label']))
+            team_detailed_points_breakdown.sort(
+                key=lambda x: (x["category"], x["label"])
+            )
 
             team_grouped_points_breakdown = {}
             for item in team_detailed_points_breakdown:
-                category = item['category']
-                team_grouped_points_breakdown[category] = team_grouped_points_breakdown.get(category, 0.0) + item['total_points']
+                category = item["category"]
+                team_grouped_points_breakdown[category] = (
+                    team_grouped_points_breakdown.get(category, 0.0)
+                    + item["total_points"]
+                )
 
-            team_data['grouped_points_breakdown'] = dict(sorted(team_grouped_points_breakdown.items()))
-            team_data['detailed_points_breakdown'] = team_detailed_points_breakdown
+            team_data["grouped_points_breakdown"] = dict(
+                sorted(team_grouped_points_breakdown.items())
+            )
+            team_data["detailed_points_breakdown"] = team_detailed_points_breakdown
+
+            # Calculate team-level beef statistics (averages)
+            team_players = team_data["players"]
+            valid_weights = [
+                p["beef_weight"]
+                for p in team_players
+                if p["beef_weight"] > 0 and p["slot_position"] != "D/ST"
+            ]
+            valid_heights = [
+                p["beef_height_inches"]
+                for p in team_players
+                if p["beef_height_inches"] > 0
+            ]
+            valid_ages = [p["beef_age"] for p in team_players if p["beef_age"] > 0]
+            valid_years_exp = [
+                p["beef_years_exp"] for p in team_players if p["beef_years_exp"] > 0
+            ]
+
+            team_data["avg_weight"] = (
+                sum(valid_weights) / len(valid_weights) if valid_weights else 0
+            )
+            team_data["avg_height_inches"] = (
+                sum(valid_heights) / len(valid_heights) if valid_heights else 0
+            )
+            team_data["avg_age"] = (
+                sum(valid_ages) / len(valid_ages) if valid_ages else 0
+            )
+            team_data["avg_years_exp"] = (
+                sum(valid_years_exp) / len(valid_years_exp) if valid_years_exp else 0
+            )
+
+            # Convert average height back to feet'inches format
+            if team_data["avg_height_inches"] > 0:
+                total_inches = int(round(team_data["avg_height_inches"]))
+                feet = total_inches // 12
+                inches = total_inches % 12
+                team_data["avg_height"] = f"{feet}'{inches}\""
+            else:
+                team_data["avg_height"] = "0'0\""
+
+            # Calculate zodiac distribution for this team
+            team_zodiac_counts = {}
+            zodiac_players = [
+                p
+                for p in team_players
+                if p.get("position") != "D/ST" and p.get("zodiac_emoji")
+            ]
+
+            for player in zodiac_players:
+                zodiac = player["zodiac_emoji"]
+                if zodiac:
+                    team_zodiac_counts[zodiac] = team_zodiac_counts.get(zodiac, 0) + 1
+
+            # Create sorted zodiac chart data for this team
+            sorted_zodiac_signs = (
+                sorted(team_zodiac_counts.keys()) if team_zodiac_counts else []
+            )
+            zodiac_chart_labels = [
+                f"{emoji} {self.get_zodiac_name(emoji)}"
+                for emoji in sorted_zodiac_signs
+            ]
+            zodiac_chart_data = [
+                team_zodiac_counts.get(zodiac, 0) for zodiac in sorted_zodiac_signs
+            ]
+
+            team_data["zodiac_chart_data"] = {
+                "labels": zodiac_chart_labels,
+                "data": zodiac_chart_data,
+            }
 
         # Prepare data for radar charts
         all_stat_categories = set()
         for team_name, team_data in players_by_team.items():
-            all_stat_categories.update(team_data['grouped_points_breakdown'].keys())
-        
+            all_stat_categories.update(team_data["grouped_points_breakdown"].keys())
+
         sorted_stat_categories = sorted(list(all_stat_categories))
 
         for team_name, team_data in players_by_team.items():
             team_points_data = []
             for category in sorted_stat_categories:
-                team_points_data.append(team_data['grouped_points_breakdown'].get(category, 0.0))
-            
-            team_data['radar_chart_data'] = {
-                'labels': sorted_stat_categories,
-                'datasets': [{
-                    'label': team_name,
-                    'data': team_points_data
-                }]
+                team_points_data.append(
+                    team_data["grouped_points_breakdown"].get(category, 0.0)
+                )
+
+            team_data["radar_chart_data"] = {
+                "labels": sorted_stat_categories,
+                "datasets": [{"label": team_name, "data": team_points_data}],
             }
+
+        # Calculate team demographics for weekly report
+        teams_with_data = []
+        for team_name, team_data in players_by_team.items():
+            if team_data["avg_age"] > 0:  # Only include teams with valid data
+                teams_with_data.append(
+                    {
+                        "name": team_name,
+                        "team_object": team_data["team_object"],
+                        "avg_age": team_data["avg_age"],
+                        "avg_years_exp": team_data["avg_years_exp"],
+                        "avg_height_inches": team_data["avg_height_inches"],
+                        "avg_height": team_data["avg_height"],
+                    }
+                )
+
+        # Calculate demographics extremes
+        oldest_team = (
+            max(teams_with_data, key=lambda x: x["avg_age"])
+            if teams_with_data
+            else None
+        )
+        youngest_team = (
+            min(teams_with_data, key=lambda x: x["avg_age"])
+            if teams_with_data
+            else None
+        )
+        most_experienced_team = (
+            max(teams_with_data, key=lambda x: x["avg_years_exp"])
+            if teams_with_data
+            else None
+        )
+        least_experienced_team = (
+            min(teams_with_data, key=lambda x: x["avg_years_exp"])
+            if teams_with_data
+            else None
+        )
+        tallest_team = (
+            max(teams_with_data, key=lambda x: x["avg_height_inches"])
+            if teams_with_data
+            else None
+        )
+        shortest_team = (
+            min(teams_with_data, key=lambda x: x["avg_height_inches"])
+            if teams_with_data
+            else None
+        )
+
+        # Calculate individual player demographics
+        all_players_with_beef = []
+        for team_name, team_data in players_by_team.items():
+            for player in team_data["players"]:
+                if player["beef_age"] > 0:  # Only include players with valid data
+                    all_players_with_beef.append(
+                        {
+                            "name": player["name"],
+                            "position": player["position"],
+                            "pro_team": player["pro_team"],
+                            "team_name": team_name,
+                            "team_logo": player["team_logo"],
+                            "beef_age": player["beef_age"],
+                            "beef_years_exp": player["beef_years_exp"],
+                            "beef_height_inches": player["beef_height_inches"],
+                            "beef_height": player["beef_height"],
+                        }
+                    )
+
+        # Calculate individual player extremes
+        oldest_player = (
+            max(all_players_with_beef, key=lambda x: x["beef_age"])
+            if all_players_with_beef
+            else None
+        )
+        youngest_player = (
+            min(all_players_with_beef, key=lambda x: x["beef_age"])
+            if all_players_with_beef
+            else None
+        )
+        most_experienced_player = (
+            max(all_players_with_beef, key=lambda x: x["beef_years_exp"])
+            if all_players_with_beef
+            else None
+        )
+        least_experienced_player = (
+            min(all_players_with_beef, key=lambda x: x["beef_years_exp"])
+            if all_players_with_beef
+            else None
+        )
+        tallest_player = (
+            max(all_players_with_beef, key=lambda x: x["beef_height_inches"])
+            if all_players_with_beef
+            else None
+        )
+        shortest_player = (
+            min(all_players_with_beef, key=lambda x: x["beef_height_inches"])
+            if all_players_with_beef
+            else None
+        )
+
+        # --- Points Breakdown Refactored ---
+
+        # Aggregate points by stat ID
+        stat_name_to_id_map = {v: k for k, v in PLAYER_STATS_MAP.items()}
+        aggregated_points_by_id = {}
+        for player in all_players:
+            if player["team_abbrev"] == "FA" or player["slot_position"] == "BE":
+                continue
+            if "points_breakdown" in player and player["points_breakdown"]:
+                for stat_name, points in player["points_breakdown"].items():
+                    if isinstance(stat_name, str) and isinstance(points, (int, float)):
+                        stat_id = stat_name_to_id_map.get(stat_name)
+                        if stat_id:
+                            aggregated_points_by_id[stat_id] = (
+                                aggregated_points_by_id.get(stat_id, 0.0) + points
+                            )
+
+        # Create detailed breakdown with all necessary info
+        detailed_points_breakdown = []
+        for stat_id, total_points in aggregated_points_by_id.items():
+            # PLAYER_STATS_MAP is {id: name}, but id is a string. Let's be safe.
+            stat_name = PLAYER_STATS_MAP.get(int(stat_id))
+            category = (
+                STAT_CATEGORY_LOOKUP.get(stat_name, "Other") if stat_name else "Other"
+            )
+
+            # SETTINGS_SCORING_FORMAT_MAP is {id: object}, id is an int.
+            # Let's ensure we handle string/int keys properly.
+            try:
+                label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get(
+                    "label", stat_name or stat_id
+                )
+            except (ValueError, TypeError):
+                label = stat_name or stat_id
+
+            detailed_points_breakdown.append(
+                {"label": label, "category": category, "total_points": total_points}
+            )
+
+        # Sort by category, then by label
+        detailed_points_breakdown.sort(key=lambda x: (x["category"], x["label"]))
+
+        # Create grouped breakdown for the pie chart
+        grouped_points_breakdown = {}
+        for item in detailed_points_breakdown:
+            category = item["category"]
+            grouped_points_breakdown[category] = (
+                grouped_points_breakdown.get(category, 0.0) + item["total_points"]
+            )
+
+        # Sort the grouped data by category for consistent display
+        sorted_grouped_points_breakdown = dict(sorted(grouped_points_breakdown.items()))
+
+        # Prepare data for radar charts
+        all_stat_categories = set()
+        for team_name, team_data in players_by_team.items():
+            all_stat_categories.update(team_data["grouped_points_breakdown"].keys())
+
+        sorted_stat_categories = sorted(list(all_stat_categories))
+
+        radar_datasets = []
+        for team_name, team_data in players_by_team.items():
+            team_points_data = []
+            for category in sorted_stat_categories:
+                team_points_data.append(
+                    team_data["grouped_points_breakdown"].get(category, 0.0)
+                )
+
+            radar_datasets.append({"label": team_name, "data": team_points_data})
+
+        final_radar_chart_data = {
+            "labels": sorted_stat_categories,
+            "datasets": radar_datasets,
+        }
+
+        # --- Beef Rankings ---
+        beef_rankings = []
+        for team_name, team_data in players_by_team.items():
+            team_players = team_data["players"]
+            # Filter for players that contribute to beef rankings (not D/ST)
+            beefy_players = [
+                p
+                for p in team_players
+                if p.get("position") != "D/ST" and p.get("beef_tabbu") is not None
+            ]
+
+            total_weight = sum(p.get("beef_weight", 0) for p in beefy_players)
+            # Calculate TABBU from total weight to avoid rounding errors
+            total_tabbu = total_weight / 500.0
+
+            if total_tabbu > 0:
+                beef_rankings.append(
+                    {
+                        "team_name": team_name,
+                        "team_logo": team_data["players"][0]["team_logo"],
+                        "total_weight": total_weight,
+                        "total_tabbu": total_tabbu,
+                    }
+                )
+
+        # Sort by total_tabbu descending
+        beef_rankings.sort(key=lambda x: x["total_tabbu"], reverse=True)
+
+        # Add rank and emoji representation
+        for i, team in enumerate(beef_rankings):
+            team["rank"] = i + 1
+            total_tabbu = team["total_tabbu"]
+
+            # 1 cow = 1200 lb . 1 tabbu = 500 lb . 1 beef = 0.5 tabbu. Round to nearest 0.5.
+            total_tabbu_rounded = round(total_tabbu * 2) / 2
+            num_cows = int(total_tabbu_rounded // 2.4)
+            remaining_tabbu = total_tabbu_rounded - (num_cows * 2.4)
+            num_beefs = int(remaining_tabbu / 0.5)
+
+            team["tabbu_emojis"] = "🐮" * num_cows + "🥩" * num_beefs
+
+        # --- Zodiac Rankings ---
+        # Calculate zodiac distribution for each team
+        zodiac_team_data = []
+        all_zodiac_signs = set()
+        league_zodiac_counts = {}
+
+        for team_name, team_data in players_by_team.items():
+            team_players = team_data["players"]
+            # Filter for players with valid zodiac data (not D/ST)
+            zodiac_players = [
+                p
+                for p in team_players
+                if p.get("position") != "D/ST" and p.get("zodiac_emoji")
+            ]
+
+            team_zodiac_counts = {}
+            for player in zodiac_players:
+                zodiac = player["zodiac_emoji"]
+                if zodiac:
+                    team_zodiac_counts[zodiac] = team_zodiac_counts.get(zodiac, 0) + 1
+                    league_zodiac_counts[zodiac] = (
+                        league_zodiac_counts.get(zodiac, 0) + 1
+                    )
+                    all_zodiac_signs.add(zodiac)
+
+            if team_zodiac_counts:
+                zodiac_team_data.append(
+                    {
+                        "team_name": team_name,
+                        "team_logo": team_data["players"][0]["team_logo"],
+                        "zodiac_counts": team_zodiac_counts,
+                        "total_players": sum(team_zodiac_counts.values()),
+                    }
+                )
+
+        # Sort zodiac signs for consistent ordering and create labels with names
+        sorted_zodiac_signs = sorted(list(all_zodiac_signs))
+        zodiac_chart_labels = [
+            f"{emoji} {self.get_zodiac_name(emoji)}" for emoji in sorted_zodiac_signs
+        ]
+
+        # Prepare radar chart data for zodiac
+        zodiac_radar_datasets = []
+        for team_data in zodiac_team_data:
+            team_zodiac_data = []
+            for zodiac in sorted_zodiac_signs:
+                team_zodiac_data.append(team_data["zodiac_counts"].get(zodiac, 0))
+
+            zodiac_radar_datasets.append(
+                {"label": team_data["team_name"], "data": team_zodiac_data}
+            )
+
+        zodiac_radar_chart_data = {
+            "labels": zodiac_chart_labels,
+            "datasets": zodiac_radar_datasets,
+        }
+
+        # Prepare pie chart data for league-wide zodiac distribution
+        zodiac_pie_chart_data = {
+            "labels": zodiac_chart_labels,
+            "data": [
+                league_zodiac_counts.get(zodiac, 0) for zodiac in sorted_zodiac_signs
+            ],
+        }
 
         # Prepare template context
         context = {
@@ -412,7 +980,7 @@ class WeeklyReport:
             "week": week,
             "matchups": matchups,
             "weekly_scores": weekly_scores,
-            "players_by_team": players_by_team, # New data structure
+            "players_by_team": players_by_team,  # New data structure
             "standings": standings,
             "power_rankings": power_rankings,
             "top_week": top_week,
@@ -424,84 +992,40 @@ class WeeklyReport:
             "top_players_by_position": top_by_position,
             "largest_weekly_margin": largest_weekly_margin,
             "largest_season_margin": largest_season_margin,
+            "upcoming_recent_birthdays": upcoming_recent_birthdays,
+            "oldest_team": oldest_team,
+            "youngest_team": youngest_team,
+            "most_experienced_team": most_experienced_team,
+            "least_experienced_team": least_experienced_team,
+            "tallest_team": tallest_team,
+            "shortest_team": shortest_team,
+            "oldest_player": oldest_player,
+            "youngest_player": youngest_player,
+            "most_experienced_player": most_experienced_player,
+            "least_experienced_player": least_experienced_player,
+            "tallest_player": tallest_player,
+            "shortest_player": shortest_player,
+            "grouped_points_breakdown": sorted_grouped_points_breakdown,
+            "detailed_points_breakdown": detailed_points_breakdown,
+            "radar_chart_data": final_radar_chart_data,  # Use the new structure
+            "beef_rankings": beef_rankings,
+            "zodiac_radar_chart_data": zodiac_radar_chart_data,
+            "zodiac_pie_chart_data": zodiac_pie_chart_data,
+            "zodiac_names": {
+                "♈": "Aries",
+                "♉": "Taurus",
+                "♊": "Gemini",
+                "♋": "Cancer",
+                "♌": "Leo",
+                "♍": "Virgo",
+                "♎": "Libra",
+                "♏": "Scorpio",
+                "♐": "Sagittarius",
+                "♑": "Capricorn",
+                "♒": "Aquarius",
+                "♓": "Pisces",
+            },
         }
-
-        # --- Points Breakdown Refactored ---
-
-        # Aggregate points by stat ID
-        stat_name_to_id_map = {v: k for k, v in PLAYER_STATS_MAP.items()}
-        aggregated_points_by_id = {}
-        for player in all_players:
-            if player["slot_position"] == "QB":
-                print(player)
-            if player["team_abbrev"] == "FA" or player["slot_position"] == "BE":
-                continue
-            if "points_breakdown" in player and player["points_breakdown"]:
-                for stat_name, points in player["points_breakdown"].items():
-                    if isinstance(stat_name, str) and isinstance(points, (int, float)):
-                        stat_id = stat_name_to_id_map.get(stat_name)
-                        if stat_id:
-                            aggregated_points_by_id[stat_id] = aggregated_points_by_id.get(stat_id, 0.0) + points
-
-        # Create detailed breakdown with all necessary info
-        detailed_points_breakdown = []
-        for stat_id, total_points in aggregated_points_by_id.items():
-            # PLAYER_STATS_MAP is {id: name}, but id is a string. Let's be safe.
-            stat_name = PLAYER_STATS_MAP.get(int(stat_id))
-            category = STAT_CATEGORY_LOOKUP.get(stat_name, "Other") if stat_name else "Other"
-
-            # SETTINGS_SCORING_FORMAT_MAP is {id: object}, id is an int.
-            # Let's ensure we handle string/int keys properly.
-            try:
-                label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get('label', stat_name or stat_id)
-            except (ValueError, TypeError):
-                label = stat_name or stat_id
-
-            detailed_points_breakdown.append({
-                'label': label,
-                'category': category,
-                'total_points': total_points
-            })
-
-        # Sort by category, then by label
-        detailed_points_breakdown.sort(key=lambda x: (x['category'], x['label']))
-
-        # Create grouped breakdown for the pie chart
-        grouped_points_breakdown = {}
-        for item in detailed_points_breakdown:
-            category = item['category']
-            grouped_points_breakdown[category] = grouped_points_breakdown.get(category, 0.0) + item['total_points']
-
-        # Sort the grouped data by category for consistent display
-        sorted_grouped_points_breakdown = dict(sorted(grouped_points_breakdown.items()))
-
-        # Prepare data for radar chart
-        all_stat_categories = set()
-        for team_name, team_data in players_by_team.items():
-            all_stat_categories.update(team_data['grouped_points_breakdown'].keys())
-        
-        sorted_stat_categories = sorted(list(all_stat_categories))
-
-        radar_datasets = []
-        for team_name, team_data in players_by_team.items():
-            team_points_data = []
-            for category in sorted_stat_categories:
-                team_points_data.append(team_data['grouped_points_breakdown'].get(category, 0.0))
-            
-            radar_datasets.append({
-                'label': team_name,
-                'data': team_points_data
-            })
-        
-        final_radar_chart_data = {
-            'labels': sorted_stat_categories,
-            'datasets': radar_datasets
-        }
-
-        # Add to context
-        context["grouped_points_breakdown"] = sorted_grouped_points_breakdown
-        context["detailed_points_breakdown"] = detailed_points_breakdown
-        context["radar_chart_data"] = final_radar_chart_data # Use the new structure
 
         # Render the template
         html = self.template.render_weekly_report(context)
@@ -510,9 +1034,7 @@ class WeeklyReport:
         if output_file is None:
             output_dir = "reports"
             os.makedirs(output_dir, exist_ok=True)
-            output_file = os.path.join(
-                output_dir, f"{self.year}-week{week}.html"
-            )
+            output_file = os.path.join(output_dir, f"{self.year}-week{week}.html")
 
         # Write the HTML to the file
         with open(output_file, "w") as f:

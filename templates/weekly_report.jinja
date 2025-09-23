@@ -1,6 +1,64 @@
 {% extends "base.jinja" %}
 
-{% block title %}{{ year }} NFL Week {{ week }} Fantasy Report{% endblock %}
+{% macro player_section(players, section_title, slot_filter, no_data_message) %}
+    <div class="sub-section-title"{% if section_title == 'Bench' %} style="margin-top: 2em;"{% endif %}>{{ section_title }}</div>
+    {% for player in players if (slot_filter == 'ne' and player.slot_position != 'BE') or (slot_filter == 'eq' and player.slot_position == 'BE') %}
+        <div class="player-breakdown">
+        <div class="player-info">
+            <div class="player-details-line">
+                <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
+                <!--
+                <div class="player-headshot"><img height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"></div>
+                -->
+                <strong>{{ player.name }}</strong> ({{ player.position }})
+                {% if player.high_roller_fines > 0 %}
+                    <span title="Fines" class="high-roller-fines">💰: ${{ player.high_roller_fines }}</span>
+                {% endif %}
+            </div>
+
+            <div class="player-total-points">
+                <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
+            </div>
+        </div>
+        <div class="player-feature-stats">
+            <span title="Age/Birth Date">⌛: {{ player.beef_age }} <span class="player-feature-stats-small" title="Birth Date">({{ player.beef_birth_date }}) <span title="{{ player.zodiac_emoji }} {{ zodiac_names.get(player.zodiac_emoji, '') }}">{{ player.zodiac_emoji }}</span></span></span>
+            <span><span title="Weight">🥩: {{ player.beef_weight }}</span> lbs <span class="player-feature-stats-small" title="tabbu">({{ player.beef_tabbu }})</span></span>
+            <span title="Height">🦒: {{ player.beef_height }}</span>
+            <span title="Years of Experience">🗓️: {{ player.beef_years_exp }}</span>
+        </div>
+            <div class="stats-table-container">
+                <table class="data-table stats-breakdown-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            {% for header in player.stats_table.headers %}
+                                <th title="{{ header.label }}" tabindex="0">{{ header.abbr }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Actual</td>
+                            {% for cell in player.stats_table.actual %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            <td>Projected</td>
+                            {% for cell in player.stats_table.projected %}
+                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <p>{{ no_data_message }}</p>
+    {% endfor %}
+{% endmacro %}
+
+{% block title %}Fantasy Football Weekly Report - Week {{ week }}{% endblock %}
 
 {% block content %}
 <h1>{{ year }} NFL Week {{ week }}</h1>
@@ -307,6 +365,193 @@
     </table>
 </div>
 
+
+<!-- Demographics Section -->
+<div class="section">
+    <div class="section-title">Demographics</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th colspan=3>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if oldest_team %}
+            <tr>
+                <td>Oldest</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ oldest_team.team_object.logo }}' /> </span>{{ oldest_team.name }}</td>
+                <td>⌛&nbsp;{{ oldest_team.avg_age|round(1) }}</td>
+            </tr>
+            {% endif %}
+            {% if youngest_team %}
+            <tr>
+                <td>Youngest</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ youngest_team.team_object.logo }}' /> </span>{{ youngest_team.name }}</td>
+                <td>⌛&nbsp;{{ youngest_team.avg_age|round(1) }}</td>
+            </tr>
+            {% endif %}
+            {% if most_experienced_team %}
+            <tr>
+                <td>Most Exp</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ most_experienced_team.team_object.logo }}' /> </span>{{ most_experienced_team.name }}</td>
+                <td>🗓️&nbsp;{{ most_experienced_team.avg_years_exp|round(1) }}</td>
+            </tr>
+            {% endif %}
+            {% if least_experienced_team %}
+            <tr>
+                <td>Least Exp</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ least_experienced_team.team_object.logo }}' /> </span>{{ least_experienced_team.name }}</td>
+                <td>🗓️&nbsp;{{ least_experienced_team.avg_years_exp|round(1) }}</td>
+            </tr>
+            {% endif %}
+            {% if tallest_team %}
+            <tr>
+                <td>Tallest</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ tallest_team.team_object.logo }}' /> </span>{{ tallest_team.name }}</td>
+                <td>🦒&nbsp;{{ tallest_team.avg_height }}</td>
+            </tr>
+            {% endif %}
+            {% if shortest_team %}
+            <tr>
+                <td>Shortest</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ shortest_team.team_object.logo }}' /> </span>{{ shortest_team.name }}</td>
+                <td>🦒&nbsp;{{ shortest_team.avg_height }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th colspan=3>Player</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if oldest_player %}
+            <tr>
+                <td>Oldest</td>
+                <td><img src="logo_svg/{{ oldest_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ oldest_player.name }}</strong> ({{ oldest_player.position }}) - {{ oldest_player.team_name }}</td>
+                <td>⌛&nbsp;{{ oldest_player.beef_age }}</td>
+            </tr>
+            {% endif %}
+            {% if youngest_player %}
+            <tr>
+                <td>Youngest</td>
+                <td><img src="logo_svg/{{ youngest_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ youngest_player.name }}</strong> ({{ youngest_player.position }}) - {{ youngest_player.team_name }}</td>
+                <td>⌛&nbsp;{{ youngest_player.beef_age }}</td>
+            </tr>
+            {% endif %}
+            {% if most_experienced_player %}
+            <tr>
+                <td>Most Exp</td>
+                <td><img src="logo_svg/{{ most_experienced_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ most_experienced_player.name }}</strong> ({{ most_experienced_player.position }}) - {{ most_experienced_player.team_name }}</td>
+                <td>🗓️&nbsp;{{ most_experienced_player.beef_years_exp }}</td>
+            </tr>
+            {% endif %}
+            {% if least_experienced_player %}
+            <tr>
+                <td>Least Exp</td>
+                <td><img src="logo_svg/{{ least_experienced_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ least_experienced_player.name }}</strong> ({{ least_experienced_player.position }}) - {{ least_experienced_player.team_name }}</td>
+                <td>🗓️&nbsp;{{ least_experienced_player.beef_years_exp }}</td>
+            </tr>
+            {% endif %}
+            {% if tallest_player %}
+            <tr>
+                <td>Tallest</td>
+                <td><img src="logo_svg/{{ tallest_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ tallest_player.name }}</strong> ({{ tallest_player.position }}) - {{ tallest_player.team_name }}</td>
+                <td>🦒&nbsp;{{ tallest_player.beef_height }}</td>
+            </tr>
+            {% endif %}
+            {% if shortest_player %}
+            <tr>
+                <td>Shortest</td>
+                <td><img src="logo_svg/{{ shortest_player.pro_team }}.svg" class="nfl-logo" /><strong>{{ shortest_player.name }}</strong> ({{ shortest_player.position }}) - {{ shortest_player.team_name }}</td>
+                <td>🦒&nbsp;{{ shortest_player.beef_height }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+<!-- Upcoming & Recent Birthdays Section -->
+<div class="section">
+    <div class="section-title">🎂 Upcoming & Recent Birthdays</div>
+    <hr>
+    {% if upcoming_recent_birthdays %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Player</th>
+                <th>Pos.</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for birthday in upcoming_recent_birthdays %}
+            <tr>
+                <td>{{ birthday.birth_date }}</td>
+                <td><img src="{{ birthday.pro_team_logo }}" class="nfl-logo" />{{ birthday.name }}</td>
+                <td>{{ birthday.position }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ birthday.team_logo }}' /> </span>{{ birthday.team_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No upcoming or recent birthdays for players on fantasy teams.</p>
+    {% endif %}
+</div>
+
+
+<!-- Beef Rankings Section -->
+<div class="section">
+    <div class="section-title">🥩 Beef Rankings</div>
+    <hr>
+    {% if beef_rankings %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="text-center">#</th>
+                <th>Team</th>
+                <th class="text-right">Weight</th>
+                <th>TABBU</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in beef_rankings %}
+            <tr>
+                <td class="text-center">{{ team.rank }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ team.team_logo }}' /> </span>{{ team.team_name }}</td>
+                <td class="text-right">{{ team.total_weight|round(1) }} lbs</td>
+                <td class="tabbu-emojis">{{ team.tabbu_emojis }} <span class="tabbu-score">({{ team.total_tabbu|round(2) }})</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="legend">
+        <div><em>TABBU = Total Adjusted Beef Body Units</em></div>
+        <div><em>🐮 = 1200 lbs = 2.4 TABBU, 🥩 = 0.5 TABBU = 250 lbs.</em></div>
+    </div>
+    {% else %}
+    <p>No beef data available to rank.</p>
+    {% endif %}
+</div>
+
+<!-- Zodiac Distribution Charts Section -->
+<div class="section">
+    <div class="section-title">🌒🌘 Zodiac Distribution</div>
+    <hr>
+    <div style="width: 95%; margin: auto;">
+        <canvas id="zodiacRadarChart"></canvas>
+    </div>
+    <div style="width: 95%; margin: auto;">
+        <canvas id="zodiacPieChart"></canvas>
+    </div>
+</div>
+
+
 <!-- Points Breakdown Charts Section -->
 <div class="section">
     <div class="section-title">Points Breakdown</div>
@@ -322,8 +567,8 @@
         <canvas id="pointsBarChart"></canvas>
     </div>
 
-
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -484,6 +729,84 @@
             }
         }
 
+        // --- Zodiac Charts ---
+        const zodiacRadarData = {{ zodiac_radar_chart_data|tojson }};
+        const zodiacPieData = {{ zodiac_pie_chart_data|tojson }};
+
+        // Zodiac Radar Chart
+        const zodiacRadarCtx = document.getElementById('zodiacRadarChart');
+        if (zodiacRadarCtx && zodiacRadarData.datasets.length > 0) {
+            const zodiacRadarChart = new Chart(zodiacRadarCtx.getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: zodiacRadarData.labels,
+                    datasets: zodiacRadarData.datasets.map((dataset, index) => ({
+                        label: dataset.label,
+                        data: dataset.data,
+                        backgroundColor: transparentize(baseColors[index % baseColors.length], 0.2),
+                        borderColor: baseColors[index % baseColors.length],
+                        borderWidth: 2,
+                        pointBackgroundColor: baseColors[index % baseColors.length],
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: baseColors[index % baseColors.length]
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Player Count by Zodiac Sign (Team Comparison)'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Zodiac Pie Chart
+        const zodiacPieCtx = document.getElementById('zodiacPieChart');
+        if (zodiacPieCtx && zodiacPieData.data.some(value => value > 0)) {
+            const zodiacPieChart = new Chart(zodiacPieCtx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: zodiacPieData.labels,
+                    datasets: [{
+                        data: zodiacPieData.data,
+                        backgroundColor: zodiacPieData.labels.map((_, index) =>
+                            transparentize(baseColors[index % baseColors.length], 0.8)
+                        ),
+                        borderColor: zodiacPieData.labels.map((_, index) =>
+                            baseColors[index % baseColors.length]
+                        ),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'League-wide Zodiac Distribution'
+                        },
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
 
     });
 </script>
@@ -568,7 +891,7 @@
     <hr>
     {% for team_name, team_data in players_by_team.items() %}
     {% set sanitized_team_name = team_name | replace(' ', '_') | replace(',', '') | replace('(', '') | replace(')', '') | replace("'", '') | replace('&', '') | replace('.', '') | replace('/', '') | replace('-', '') %}
-    <div class="team-header">
+        <div class="team-header">
         {# Assuming team logo is available on one of the players #}
         <img class='logo' src='{{ team_data.players[0].team_logo }}' />
         <div class="team-header-text-content">
@@ -580,14 +903,21 @@
                 <span class="team-points">PF: {{ team_data.team_object.points_for|round(2) }} PA: {{ team_data.team_object.points_against|round(2) }}</span>
                 <span class="team-moves">Adds: {{ team_data.team_object.acquisitions }} Drops: {{ team_data.team_object.drops }} Trades: {{ team_data.team_object.trades }} IR: {{ team_data.team_object.move_to_ir }}</span>
                 <span class="team-playoff-pct">Playoff %: {{ (team_data.team_object.playoff_pct)|round(2) }}%</span>
+                <span title="Average Weight">🥩: {{ team_data.avg_weight|round(1) }} lbs</span>
+                <span title="Average Height">🦒: {{ team_data.avg_height }}</span>
+                <span title="Average Age">⌛: {{ team_data.avg_age|round(1) }}</span>
+                <span title="Average Years Experience">🗓️: {{ team_data.avg_years_exp|round(1) }}</span>
             </div>
             {% endif %}
         </div>
     </div>
     <hr>
     <div class="team-chart-toggle">
-        <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'pie'); return false;">🥧</a> |
+        Points: <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'pie'); return false;">🥧</a> |
         <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'radar'); return false;">🕸️</a>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        Zodiac: <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'zodiacPie'); return false;">🥧</a> |
+        <a href="#" onclick="showChart('{{ sanitized_team_name }}', 'zodiacRadar'); return false;">🕸️</a>
     </div>
 
     <div id="pieChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts">
@@ -603,6 +933,18 @@
     <div id="radarChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts" style="display: none;">
         <div style="width: 75%; margin: auto;">
             <canvas id="teamRadarChart_{{ sanitized_team_name }}"></canvas>
+        </div>
+    </div>
+
+    <div id="zodiacPieChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts" style="display: none;">
+        <div style="width: 75%; margin: auto;">
+            <canvas id="teamZodiacPieChart_{{ sanitized_team_name }}"></canvas>
+        </div>
+    </div>
+
+    <div id="zodiacRadarChartContainer_{{ sanitized_team_name }}" class="team-points-breakdown-charts" style="display: none;">
+        <div style="width: 75%; margin: auto;">
+            <canvas id="teamZodiacRadarChart_{{ sanitized_team_name }}"></canvas>
         </div>
     </div>
 
@@ -753,102 +1095,106 @@
                     }
                 });
             }
+
+            // Zodiac Pie Chart
+            const zodiacPieCtx = document.getElementById('teamZodiacPieChart_{{ sanitized_team_name }}');
+            if (zodiacPieCtx) {
+                const zodiacData = {{ team_data.zodiac_chart_data|tojson }};
+                if (zodiacData.data && zodiacData.data.some(value => value > 0)) {
+                    const baseColors = [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#7FDBDA', '#FF9F40',
+                        '#FFB3C1', '#A3D9B1', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00'
+                    ];
+
+                    new Chart(zodiacPieCtx.getContext('2d'), {
+                        type: 'pie',
+                        data: {
+                            labels: zodiacData.labels,
+                            datasets: [{
+                                data: zodiacData.data,
+                                backgroundColor: zodiacData.labels.map((_, index) =>
+                                    transparentize(baseColors[index % baseColors.length], 0.6)
+                                ),
+                                borderColor: zodiacData.labels.map((_, index) =>
+                                    baseColors[index % baseColors.length]
+                                ),
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'right'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Team Zodiac Distribution'
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Zodiac Radar Chart
+            const zodiacRadarCtx = document.getElementById('teamZodiacRadarChart_{{ sanitized_team_name }}');
+            if (zodiacRadarCtx) {
+                const zodiacData = {{ team_data.zodiac_chart_data|tojson }};
+                if (zodiacData.data && zodiacData.data.some(value => value > 0)) {
+                    const baseColors = [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#7FDBDA', '#FF9F40',
+                        '#FFB3C1', '#A3D9B1', '#A52A2A', '#DEB887', '#5F9EA0', '#7FFF00'
+                    ];
+                    const color = baseColors[{{ loop.index0 }} % baseColors.length];
+
+                    new Chart(zodiacRadarCtx.getContext('2d'), {
+                        type: 'radar',
+                        data: {
+                            labels: zodiacData.labels,
+                            datasets: [{
+                                label: '{{ team_name }}',
+                                data: zodiacData.data,
+                                backgroundColor: transparentize(color, 0.2),
+                                borderColor: color,
+                                pointBackgroundColor: color,
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: color
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Team Zodiac Distribution'
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
         });
     </script>
 
-    <div class="sub-section-title">Starters</div>
-    {% for player in team_data.players if player.slot_position != 'BE' %}
-        <div class="player-breakdown">
-            <div class="player-info">
-                <div class="player-details-line">
-                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
-                    <!--
-                    <div class="player-headshot"><img loading="lazy" height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"></div>
-                    -->
-                    <strong>{{ player.name }}</strong> ({{ player.position }})
-                </div>
-                <div class="player-total-points">
-                    <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
-                </div>
-            </div>
-            <div class="stats-table-container">
-                <table class="data-table stats-breakdown-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            {% for header in player.stats_table.headers %}
-                                <th title="{{ header.label }}" tabindex="0">{{ header.abbr }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Actual</td>
-                            {% for cell in player.stats_table.actual %}
-                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                            {% endfor %}
-                        </tr>
-                        <tr>
-                            <td>Projected</td>
-                            {% for cell in player.stats_table.projected %}
-                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% else %}
-        <p>No starters found for this team.</p>
-    {% endfor %}
+    {{ player_section(team_data.players, 'Starters', 'ne', 'No starters found for this team.') }}
+    {{ player_section(team_data.players, 'Bench', 'eq', 'No bench players found for this team.') }}
 
-    <div class="sub-section-title" style="margin-top: 2em;">Bench</div>
-    {% for player in team_data.players if player.slot_position == 'BE' %}
-        <div class="player-breakdown">
-            <div class="player-info">
-                <div class="player-details-line">
-                    <img src="logo_svg/{{ player.pro_team }}.svg" class="nfl-logo player-info-nfl-logo" />
-                    <!--
-                    <div class="player-headshot"><img height="35px" width="48px" alt="{{ player.name }}" src="https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/{{ player.id }}.png&amp;w=96&amp;h=70&amp;cb=1"></div>
-                    -->
-                    <strong>{{ player.name }}</strong> ({{ player.position }})
-                </div>
-                <div class="player-total-points">
-                    <span class="actual-points">{{ player.points|format_score }}</span> / <span class="projected-points">{{ player.projected_points|format_score }}</span>
-                </div>
-            </div>
-            <div class="stats-table-container">
-                <table class="data-table stats-breakdown-table">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            {% for header in player.stats_table.headers %}
-                                <th title="{{ header.label }}" tabindex="0">{{ header.abbr }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Actual</td>
-                            {% for cell in player.stats_table.actual %}
-                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                            {% endfor %}
-                        </tr>
-                        <tr>
-                            <td>Projected</td>
-                            {% for cell in player.stats_table.projected %}
-                                <td class="{{ cell.style }}">{{ cell.value|format_score }}</td>
-                            {% endfor %}
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    {% else %}
-        <p>No bench players found for this team.</p>
-    {% endfor %}
     {% endfor %}
 </div>
+
 
 <!-- SUMMARY_REPORTS_PLACEHOLDER -->
 {% endblock %}

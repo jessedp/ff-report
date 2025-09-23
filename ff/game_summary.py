@@ -8,19 +8,23 @@ The main data object is the `League` class from `espn_api.football`,
 which provides access to teams, settings, scores, and more.
 See docs/espn-api.wiki/League-Class.md for more details.
 """
-import logging # Added logging
-import time # Added time for timing
+
+import logging  # Added logging
+import time  # Added time for timing
 from .data import LeagueData
 from espn_api.football.constant import SETTINGS_SCORING_FORMAT_MAP, PLAYER_STATS_MAP
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def _format_player_summary(player):
     """Formats the summary for a single player."""
     summary = f"*   **{player.name}** ({player.slot_position}) - {player.points} points (proj: {player.projected_points})\n"
 
-    game_date = getattr(player, 'game_date', None)
+    game_date = getattr(player, "game_date", None)
     if game_date:
         summary += f"    *   **Game Date:** {game_date}\n"
 
@@ -36,13 +40,16 @@ def _format_player_summary(player):
             has_stats = True
             stat_id = next((k for k, v in PLAYER_STATS_MAP.items() if v == stat), None)
             if stat_id:
-                label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get('label', stat)
-                stats_summary += f"        *   {label}: {round(points,2)} points\n"
-        
+                label = SETTINGS_SCORING_FORMAT_MAP.get(int(stat_id), {}).get(
+                    "label", stat
+                )
+                stats_summary += f"        *   {label}: {round(points, 2)} points\n"
+
         if has_stats:
             summary += "    *   **Stats:**\n"
             summary += stats_summary
     return summary
+
 
 def generate_summary(week):
     """Generate a game summary for a given week.
@@ -84,7 +91,9 @@ def generate_summary(week):
         summary += "\n"
 
     except Exception as e:
-        summary += f"<p><em>Could not retrieve league information. Error: {e}</em></p>\n\n"
+        summary += (
+            f"<p><em>Could not retrieve league information. Error: {e}</em></p>\n\n"
+        )
 
     summary += "## Matchup Summaries\n\n"
 
@@ -95,10 +104,14 @@ def generate_summary(week):
         for team in [matchup.home_team, matchup.away_team]:
             summary += f"#### {team.team_name} ({team.team_abbrev})\n\n"
 
-            lineup = matchup.home_lineup if team == matchup.home_team else matchup.away_lineup
+            lineup = (
+                matchup.home_lineup
+                if team == matchup.home_team
+                else matchup.away_lineup
+            )
 
-            starters = [p for p in lineup if p.slot_position != 'BE']
-            bench = [p for p in lineup if p.slot_position == 'BE']
+            starters = [p for p in lineup if p.slot_position != "BE"]
+            bench = [p for p in lineup if p.slot_position == "BE"]
 
             summary += "##### Starters\n\n"
             for player in starters:
@@ -112,7 +125,10 @@ def generate_summary(week):
 
     return summary
 
-def generate_simplified_summary(week: int, year: int, league_data: LeagueData) -> str: # Added year parameter
+
+def generate_simplified_summary(
+    week: int, year: int, league_data: LeagueData
+) -> str:  # Added year parameter
     """Generate a simplified game summary for a given week, focusing on matchup results.
 
     Args:
@@ -123,17 +139,21 @@ def generate_simplified_summary(week: int, year: int, league_data: LeagueData) -
     Returns:
         A string containing the simplified game summary.
     """
-    start_time = time.time() # Start timing
+    start_time = time.time()  # Start timing
     logging.info(f"Fetching box scores for {year} Week {week}...")
     box_scores = league_data.get_box_scores(week)
-    end_time = time.time() # End timing
-    logging.info(f"Fetched {len(box_scores)} box scores for {year} Week {week} in {end_time - start_time:.2f} seconds.")
+    end_time = time.time()  # End timing
+    logging.info(
+        f"Fetched {len(box_scores)} box scores for {year} Week {week} in {end_time - start_time:.2f} seconds."
+    )
 
     if not box_scores:
-        logging.warning(f"No box scores found for {year} Week {week}. This might indicate an issue with LEAGUE_ID for this year.")
+        logging.warning(
+            f"No box scores found for {year} Week {week}. This might indicate an issue with LEAGUE_ID for this year."
+        )
         return f"### {year} Week {week} Simplified Game Summary\n\nNo data available for this week.\n\n"
 
-    summary = f"### {year} Week {week} Simplified Game Summary\n\n" # Updated header
+    summary = f"### {year} Week {week} Simplified Game Summary\n\n"  # Updated header
 
     # Check for playoff status and add prominent statement if true
     if box_scores and box_scores[0].is_playoff:
@@ -149,12 +169,16 @@ def generate_simplified_summary(week: int, year: int, league_data: LeagueData) -
             winner_team = matchup.away_team
             loser_team = matchup.home_team
             summary += f"- **{winner_team.team_name} ({winner_team.team_abbrev})** defeated **{loser_team.team_name} ({loser_team.team_abbrev})** with a score of {matchup.home_score} (proj: {matchup.home_projected:.2f}) - {matchup.away_score} (proj: {matchup.away_projected:.2f}).\n"
-        else: # Tie
+        else:  # Tie
             summary += f"- **{matchup.home_team.team_name} ({matchup.home_team.team_abbrev})** tied with **{matchup.away_team.team_name} ({matchup.away_team.team_abbrev})** with a score of {matchup.home_score} (proj: {matchup.home_projected:.2f}) - {matchup.away_score} (proj: {matchup.away_projected:.2f}).\n"
-        
+
         # Calculate bench score and compare to starters
-        home_bench_score = sum(p.points for p in matchup.home_lineup if p.slot_position == 'BE')
-        away_bench_score = sum(p.points for p in matchup.away_lineup if p.slot_position == 'BE')
+        home_bench_score = sum(
+            p.points for p in matchup.home_lineup if p.slot_position == "BE"
+        )
+        away_bench_score = sum(
+            p.points for p in matchup.away_lineup if p.slot_position == "BE"
+        )
 
         if home_bench_score > matchup.home_score:
             summary += f"  - {matchup.home_team.team_abbrev}'s bench ({home_bench_score:.2f}) outscored their starters ({matchup.home_score:.2f}). 🤡\n"

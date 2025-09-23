@@ -249,13 +249,16 @@ def calculate_matchups(box_score):
                 "winner": (
                     "home"
                     if score.home_score > score.away_score
-                    else "away" if score.away_score > score.home_score else "tie"
+                    else "away"
+                    if score.away_score > score.home_score
+                    else "tie"
                 ),
                 "lost_could_win": lost_could_win,
             }
         )
 
     return matchups
+
 
 def calculate_top_players(all_players):
     """Calculate top player stats for the week
@@ -269,22 +272,22 @@ def calculate_top_players(all_players):
         - A dictionary with top 15 players for each position.
     """
     # Sort all players by points, descending
-    sorted_players = sorted(all_players, key=lambda p: p['points'], reverse=True)
+    sorted_players = sorted(all_players, key=lambda p: p["points"], reverse=True)
 
     top_overall = sorted_players[:15]
 
     top_by_position = {
-        'QB': [],
-        'RB': [],
-        'WR': [],
-        'TE': [],
-        'D/ST': [],
-        'K': [],
-        'P': []
+        "QB": [],
+        "RB": [],
+        "WR": [],
+        "TE": [],
+        "D/ST": [],
+        "K": [],
+        "P": [],
     }
 
     for player in sorted_players:
-        pos = player['position']
+        pos = player["position"]
         if pos in top_by_position and len(top_by_position[pos]) < 15:
             top_by_position[pos].append(player)
 

@@ -268,12 +268,21 @@
             line-height: 1.25;
         }
         .player-breakdown { margin-bottom: 1.0em; }
-        .player-info {
+        .player-info, .player-feature-stats {
             font-size: 0.9em;
             margin-bottom: 0.5em;
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        .player-feature-stats {
+            text-align: right;
+            font-size: 0.8em;
+            justify-content: flex-end;
+            gap: 1em;
+        }
+        .player-feature-stats-small {
+            font-size: 0.7em;
         }
         .actual-points {
             font-size: 1.2em;
@@ -344,7 +353,7 @@
 
         .team-details .team-points {
             color: #007bff;
-        }
+            +}
 
         .team-details .team-moves {
             color: #28a745;
@@ -356,7 +365,11 @@
         }
 
         {% block extra_css %}{% endblock %}
-    .player-info {
+        .high-roller-fines {
+            padding-left: 1em;
+        }
+
+        .player-info {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -393,6 +406,29 @@
                 padding: 0em 0.5em; /* Reduce padding on small screens */
             }
         }
+        .player-feature-stats-small {
+            font-size: 0.7em;
+            color: #666;
+        }
+
+        .high-roller-fines {
+            font-size: 0.8em;
+            color: #a00;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .tabbu-emojis {
+            font-size: 1.2em;
+            word-break: break-all;
+        }
+
+        .tabbu-score {
+            font-size: 0.8rem;
+            color: #666;
+            vertical-align: middle;
+        }
+
     </style>
 </head>
 <body>
@@ -401,13 +437,24 @@
         function showChart(teamId, chartType) {
             const pieContainer = document.getElementById('pieChartContainer_' + teamId);
             const radarContainer = document.getElementById('radarChartContainer_' + teamId);
+            const zodiacPieContainer = document.getElementById('zodiacPieChartContainer_' + teamId);
+            const zodiacRadarContainer = document.getElementById('zodiacRadarChartContainer_' + teamId);
 
+            // Hide all containers first
+            pieContainer.style.display = 'none';
+            radarContainer.style.display = 'none';
+            zodiacPieContainer.style.display = 'none';
+            zodiacRadarContainer.style.display = 'none';
+
+            // Show the selected container
             if (chartType === 'pie') {
                 pieContainer.style.display = 'block';
-                radarContainer.style.display = 'none';
             } else if (chartType === 'radar') {
-                pieContainer.style.display = 'none';
                 radarContainer.style.display = 'block';
+            } else if (chartType === 'zodiacPie') {
+                zodiacPieContainer.style.display = 'block';
+            } else if (chartType === 'zodiacRadar') {
+                zodiacRadarContainer.style.display = 'block';
             }
         }
     </script>

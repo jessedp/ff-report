@@ -3,3 +3,7 @@ jinja2
 python-dotenv
 click
 black
+requests
+beautifulsoup4
+pyobjson
+tornado

@@ -16,7 +16,4 @@ ESPN_S2 = os.environ.get("espn_s2")
 DEFAULT_WEEK = int(os.environ.get("DEFAULT_WEEK", 0))
 
 # Division images for HTML reports
-DIV_IMAGES = {
-    "J": '<img src="./jag-16x16.png">',
-    "F": '<img src="./fball-16x16.png">'
-}
+DIV_IMAGES = {"J": '<img src="./jag-16x16.png">', "F": '<img src="./fball-16x16.png">'}

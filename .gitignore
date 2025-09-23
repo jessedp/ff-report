@@ -35,7 +35,10 @@ var/
 2021/
 reports/
 reports_bk/
-*.txt
+#*.txt
+fullcode.txt
+.aicode*
+
 cache/
 preview/
 data/

@@ -1,26 +1,54 @@
 """Fantasy Football CLI application"""
+
 import os
 import subprocess
 import click
+import logging
 from .reports import WeeklyReport
 from .config import LEAGUE_YEAR, DEFAULT_WEEK
 from .data import LeagueData
 from .game_summary import generate_summary
 
+
 @click.group()
-def cli():
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging.")
+def cli(verbose):
     """Fantasy Football CLI application for generating reports and statistics."""
-    pass
+    log_level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=log_level, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
 
 @cli.command()
-@click.option('--year', '-y', type=int, default=LEAGUE_YEAR,
-              help='NFL season year to generate report for')
-@click.option('--week', '-w', type=int, default=DEFAULT_WEEK,
-              help='NFL week to generate report for (0 for current week)')
-@click.option('--output', '-o', type=str, default=None,
-              help='Output file path (defaults to reports/YEAR-weekWEEK.html)')
-@click.option('--force', '-f', is_flag=True, default=False,
-              help='Force overwrite of existing report')
+@click.option(
+    "--year",
+    "-y",
+    type=int,
+    default=LEAGUE_YEAR,
+    help="NFL season year to generate report for",
+)
+@click.option(
+    "--week",
+    "-w",
+    type=int,
+    default=DEFAULT_WEEK,
+    help="NFL week to generate report for (0 for current week)",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=str,
+    default=None,
+    help="Output file path (defaults to reports/YEAR-weekWEEK.html)",
+)
+@click.option(
+    "--force",
+    "-f",
+    is_flag=True,
+    default=False,
+    help="Force overwrite of existing report",
+)
 def weekly(year, week, output, force):
     """Generate a weekly fantasy football report."""
     report = WeeklyReport(year=year)
@@ -43,23 +71,31 @@ def weekly(year, week, output, force):
         current_year = LEAGUE_YEAR
         # Assuming LeagueData() gets the current year's data
         current_week = LeagueData().get_current_week()
-        is_current_report = (year == current_year and effective_week == current_week)
+        is_current_report = year == current_year and effective_week == current_week
 
         if not is_current_report:
-            click.echo(f"Error: {output_file_path} already exists. Use --force to overwrite.")
+            click.echo(
+                f"Error: {output_file_path} already exists. Use --force to overwrite."
+            )
             return
 
     # The generate function now correctly handles the output path
-    generated_file = report.generate(week=week if week != 0 else None, output_file=output)
+    generated_file = report.generate(
+        week=week if week != 0 else None, output_file=output
+    )
     click.echo(f"Report generated: {generated_file}")
 
+
 @cli.command()
-@click.option('--year', '-y', type=int, default=LEAGUE_YEAR,
-              help='NFL season year to generate reports for')
-@click.option('--start', '-s', type=int, default=1,
-              help='Starting week number')
-@click.option('--end', '-e', type=int, default=17,
-              help='Ending week number')
+@click.option(
+    "--year",
+    "-y",
+    type=int,
+    default=LEAGUE_YEAR,
+    help="NFL season year to generate reports for",
+)
+@click.option("--start", "-s", type=int, default=1, help="Starting week number")
+@click.option("--end", "-e", type=int, default=17, help="Ending week number")
 def generate_all(year, start, end):
     """Generate reports for all weeks in a range."""
     report = WeeklyReport(year=year)
@@ -78,9 +114,15 @@ def generate_all(year, start, end):
         except Exception as e:
             click.echo(f"Error generating report for Week {week_num}: {e}")
 
+
 @cli.command()
-@click.option('--week', '-w', type=int, default=DEFAULT_WEEK,
-                help='NFL week to generate summary for (0 for current week)')
+@click.option(
+    "--week",
+    "-w",
+    type=int,
+    default=DEFAULT_WEEK,
+    help="NFL week to generate summary for (0 for current week)",
+)
 def summary(week):
     """Generate a game summary for a given week."""
     # Use current week if week is 0
@@ -91,5 +133,6 @@ def summary(week):
     summary_text = generate_summary(effective_week)
     click.echo(summary_text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     cli()

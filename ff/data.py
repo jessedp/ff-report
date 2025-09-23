@@ -1,3 +1,8 @@
+import json
+import os
+from datetime import datetime, timedelta
+from pathlib import Path
+
 from espn_api.football import League
 from .config import LEAGUE_ID, LEAGUE_YEAR, SWID, ESPN_S2
 
@@ -17,6 +22,7 @@ class LeagueData:
             year=int(year),
             swid=SWID,
             espn_s2=ESPN_S2,
+            fetch_league=True,
         )
 
     def get_current_week(self):

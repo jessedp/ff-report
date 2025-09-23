@@ -1,0 +1,6 @@
+[tool.basedpyright]
+include = ["ff"]
+
+reportAny = false
+reportExplicitAny = false
+reportUnknownVariableType = false

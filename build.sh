@@ -49,7 +49,7 @@ mkdir -p $DEST_DIR/reports
 if [ "$MODE" == "preview" ]; then
     echo "--- Generating report for Week $WEEK, Year $YEAR ---"
     OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
-    python3 -m ff weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
+    python3 -m ff --verbose weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
 else # build
     echo "--- Copying existing reports ---"
     if [ -d "reports" ] && [ "$(ls -A reports)" ]; then
@@ -76,13 +76,13 @@ if [ -d "$SUMMARY_SRC_DIR" ] && [ "$(ls -A "$SUMMARY_SRC_DIR")" ]; then
         echo "pandoc not found, skipping summary generation."
     else
         echo "pandoc found. Searching for summary files..."
-        
+
         find_pattern="*_llm_summary_*.md"
         if [ "$MODE" == "preview" ]; then
             find_pattern="${YEAR}-week${WEEK}*_llm_summary_*.md"
         fi
         SUMMARY_FILES=$(find "$SUMMARY_SRC_DIR" -name "$find_pattern" -type f -print0 | xargs -0 ls -tr)
-        
+
         if [ -n "$SUMMARY_FILES" ] || [ -f "prompt.txt" ]; then
             mkdir -p "$DEST_DIR/reports/summaries"
             SUMMARY_LINKS_HTML="<div class='section'><div class='section-title'>LLM Summaries & Prompt</div><hr><ol>"
