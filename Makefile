@@ -1,10 +1,24 @@
 # Makefile for Fantasy Football App
 
-.PHONY: build deploy dry-run clean preview
+.PHONY: build deploy dry-run clean preview llm
 
 # Build the project for deployment
+# Usage: make build WEEK=3
 build:
-	./build.sh build
+	@if [ -z "$(WEEK)" ]; then \
+		echo "Please specify a week, e.g., make build WEEK=3"; \
+		exit 1; \
+	fi
+	./build.sh build --week $(WEEK)
+
+# Generate an LLM report for a specific week
+# Usage: make llm WEEK=3
+llm:
+	@if [ -z "$(WEEK)" ]; then \
+		echo "Please specify a week, e.g., make llm WEEK=3"; \
+		exit 1; \
+	fi
+	python -m ff.llm_report --week $(WEEK)
 
 # Preview a weekly report
 # Usage: make preview WEEK=3

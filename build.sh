@@ -17,25 +17,28 @@ fi
 
 if [ "$MODE" == "preview" ]; then
     DEST_DIR=$PREVIEW_DEST_DIR
-    YEAR=$(date +%Y)
-    WEEK=""
-    # Simple parsing for --week and --year
-    while [[ $# -gt 0 ]]; do
-        key="$1"
-        case $key in
-            --week) WEEK="$2"; shift; shift;;
-            --year) YEAR="$2"; shift; shift;;
-            *)
-            shift
-            ;;
-        esac
-    done
-    if [ -z "$WEEK" ]; then
-        echo "Preview mode requires --week <number>"
-        exit 1
-    fi
 else # build mode
     DEST_DIR=$BUILD_DEST_DIR
+fi
+
+YEAR=$(date +%Y)
+WEEK=""
+# Simple parsing for --week and --year
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+        --week) WEEK="$2"; shift; shift;;
+        --year) YEAR="$2"; shift; shift;;
+        *)
+        shift
+        ;;
+    esac
+done
+
+# Check if WEEK is set for preview mode after parsing all arguments
+if [ "$MODE" == "preview" ] && [ -z "$WEEK" ]; then
+    echo "Preview mode requires --week <number>"
+    exit 1
 fi
 
 # --- Main Logic ---
@@ -46,15 +49,21 @@ rm -rf $DEST_DIR
 mkdir -p $DEST_DIR/reports
 
 # 2. Generate/Copy reports
-if [ "$MODE" == "preview" ]; then
-    echo "--- Generating report for Week $WEEK, Year $YEAR ---"
-    OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
-    python3 -m ff --verbose weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
-else # build
-    echo "--- Copying existing reports ---"
+if [ "$MODE" == "build" ]; then
+    if [ -n "$WEEK" ]; then # If WEEK is provided, generate a single report
+        echo "--- Generating BUILD report for Week $WEEK, Year $YEAR ---"
+        # OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
+        python3 -m ff --verbose weekly --year $YEAR --week $WEEK
+    else # If WEEK is not provided, generate all reports (placeholder for now)
+        echo "--- Generating ALL reports for Year $YEAR (Not yet implemented) ---"
+    fi
     if [ -d "reports" ] && [ "$(ls -A reports)" ]; then
         cp -r reports/* $DEST_DIR/reports/
     fi
+else # preview mode
+    echo "--- Generating PREVIEW report for Week $WEEK, Year $YEAR ---"
+    OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
+    python3 -m ff --verbose weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
 fi
 
 # 3. Copy common assets
@@ -68,6 +77,17 @@ if [ -d "cache/images" ]; then
     cp -r cache/images/* $DEST_DIR/reports/
 fi
 
+# 4. Generate LLM Summary if needed (for build mode)
+if [ "$MODE" == "build" ] && [ -n "$WEEK" ]; then
+    LLM_SUMMARY_FILE="$SUMMARY_SRC_DIR/${YEAR}-week${WEEK}_llm_summary.md"
+    if [ ! -f "$LLM_SUMMARY_FILE" ]; then
+        echo "--- LLM Summary for Week $WEEK not found, generating... ---"
+        python3 -m ff.llm_report --week $WEEK --year $YEAR
+    else
+        echo "--- LLM Summary for Week $WEEK already exists. ---"
+    fi
+fi
+
 # 4. Handle LLM Summaries
 echo "--- Handling LLM Summaries ---"
 SUMMARY_LINKS_HTML=""
@@ -77,11 +97,11 @@ if [ -d "$SUMMARY_SRC_DIR" ] && [ "$(ls -A "$SUMMARY_SRC_DIR")" ]; then
     else
         echo "pandoc found. Searching for summary files..."
 
-        find_pattern="*_llm_summary_*.md"
-        if [ "$MODE" == "preview" ]; then
-            find_pattern="${YEAR}-week${WEEK}*_llm_summary_*.md"
+        find_pattern="*_llm_summary.md"
+        if [ "$MODE" == "preview" ] || ([ "$MODE" == "build" ] && [ -n "$WEEK" ]); then
+            find_pattern="${YEAR}-week${WEEK}_llm_summary.md"
         fi
-        SUMMARY_FILES=$(find "$SUMMARY_SRC_DIR" -name "$find_pattern" -type f -print0 | xargs -0 ls -tr)
+        SUMMARY_FILES=$(find "$SUMMARY_SRC_DIR" -name "$find_pattern" -type f -print0 | xargs -0)
 
         if [ -n "$SUMMARY_FILES" ] || [ -f "prompt.txt" ]; then
             mkdir -p "$DEST_DIR/reports/summaries"
