@@ -123,6 +123,20 @@
                 </div>
             </div>
         </div>
+        {% if matchup.faked_matchup_data %}
+        <div class="matchup-location">
+            <div class="matchup-info-grid">
+                <div class="matchup-info-item" alt="Location" title="Location">
+                    <span class="matchup-info-icon">📍</span>
+                    <span class="matchup-info-value">{{ matchup.faked_matchup_data.location }}</span>
+                </div>
+                <div class="matchup-info-item" alt="Attendance" title="Attendance">
+                    <span class="matchup-info-icon">👥</span>
+                    <span class="matchup-info-value">{{ "{:,}".format(matchup.faked_matchup_data.attendance | int) }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
         {% endfor %}
 
         <div class="legend">

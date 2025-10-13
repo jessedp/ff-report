@@ -1,5 +1,6 @@
 """Generate fantasy football reports"""
 
+from asyncio import sleep
 import os
 import hashlib
 import urllib.request
@@ -19,6 +20,8 @@ from .templates import TemplateEngine
 from .config import LEAGUE_YEAR, SWID, ESPN_S2
 from .features.beef import BeefFeature
 from .features.high_roller import HighRollerFeature
+from .features.attendance import AttendanceFeature
+from .utils.geocoding_utils import Geocoder
 
 
 def cache_logo(logo_url):
@@ -203,6 +206,57 @@ class WeeklyReport:
         }
         return zodiac_names.get(zodiac_emoji, "")
 
+    def _calculate_faked_data(self, game_data_list):
+        if not game_data_list:
+            return {
+                "avg_lat": None,
+                "avg_lon": None,
+                "avg_attendance": None,
+                "avg_timestamp": None,
+            }
+
+        total_lat = 0
+        total_lon = 0
+        total_attendance = 0
+        total_timestamp = 0
+        valid_entries = 0
+
+        for game_data in game_data_list:
+            if (
+                game_data["latlng"]
+                and game_data["latlng"][0] is not None
+                and game_data["latlng"][1] is not None
+            ):
+                total_lat += game_data["latlng"][0]
+                total_lon += game_data["latlng"][1]
+            if game_data["attendance"] is not None:
+                total_attendance += game_data["attendance"]
+            if game_data["date"]:
+                # Convert date string to datetime object, then to timestamp
+                dt_object = datetime.strptime(game_data["date"], "%Y-%m-%dT%H:%MZ")
+                total_timestamp += dt_object.timestamp()
+            valid_entries += 1
+
+        if valid_entries == 0:
+            return {
+                "avg_lat": None,
+                "avg_lon": None,
+                "avg_attendance": None,
+                "avg_timestamp": None,
+            }
+
+        avg_lat = total_lat / valid_entries
+        avg_lon = total_lon / valid_entries
+        avg_attendance = total_attendance / valid_entries
+        avg_timestamp = total_timestamp / valid_entries
+
+        return {
+            "avg_lat": avg_lat,
+            "avg_lon": avg_lon,
+            "avg_attendance": avg_attendance,
+            "avg_timestamp": avg_timestamp,
+        }
+
     def generate(self, week=None, output_file=None):
         """Generate a weekly report
 
@@ -340,12 +394,48 @@ class WeeklyReport:
         high_roller_feature = HighRollerFeature(
             season=self.year, data_dir=feature_cache_dir
         )
+        attendance_feature = AttendanceFeature(data_dir=feature_cache_dir, week=week)
+        geocoder = Geocoder()  # Instantiate Geocoder
+
+        # Process attendance_feature.feature_data to make it easily searchable
+        # This will store game details (date, attendance, city, state, country, latlng) per pro_team
+        pro_team_game_data = {}
+        for game in attendance_feature.feature_data:
+            game_location_address = (
+                f"{game['city']}, {game['state']}, {game['country']}"
+            )
+            print(f"Geocoding address: {game_location_address}")
+            location = geocoder.geocode(game_location_address)
+            game_latlng = None
+            if location:
+                game_latlng = (location.latitude, location.longitude)
+
+            game_details = {
+                "date": game["date"],
+                "attendance": game["attendance"],
+                "city": game["city"],
+                "state": game["state"],
+                "country": game["country"],
+                "latlng": game_latlng,
+            }
+
+            # Store game details for both home and away teams
+            if game["home_team_abbrev"] not in pro_team_game_data:
+                pro_team_game_data[game["home_team_abbrev"]] = []
+            pro_team_game_data[game["home_team_abbrev"]].append(game_details)
+
+            if game["away_team_abbrev"] not in pro_team_game_data:
+                pro_team_game_data[game["away_team_abbrev"]] = []
+            pro_team_game_data[game["away_team_abbrev"]].append(game_details)
+
         all_players = self.data.get_weekly_players(week)
         for player in all_players:
             player["team_logo"] = cache_logo(player["team_logo"])
             player["pro_team_logo"] = cache_logo(
                 f"images/logo_svg/{player['pro_team']}.svg"
             )
+            # Add game data for the player's pro team
+            player["game_data"] = pro_team_game_data.get(player["pro_team"], [])
 
             # Add feature stats
             name_parts = player["name"].split()
@@ -974,6 +1064,144 @@ class WeeklyReport:
             ],
         }
 
+        # Calculate faked location, time, and attendance for each matchup
+        for matchup in matchups:
+            home_team_name = matchup["home_team"]["name"]
+            away_team_name = matchup["away_team"]["name"]
+
+            home_starters_game_data = []
+            away_starters_game_data = []
+
+            # Collect game data for home team starters
+            if home_team_name in players_by_team:
+                for player in players_by_team[home_team_name]["players"]:
+                    if player["slot_position"] != "BE":  # Only starters
+                        home_starters_game_data.extend(player.get("game_data", []))
+
+            # Collect game data for away team starters
+            if away_team_name in players_by_team:
+                for player in players_by_team[away_team_name]["players"]:
+                    if player["slot_position"] != "BE":  # Only starters
+                        away_starters_game_data.extend(player.get("game_data", []))
+
+            home_faked_data = self._calculate_faked_data(home_starters_game_data)
+            away_faked_data = self._calculate_faked_data(away_starters_game_data)
+
+            # Average home and away faked data for the matchup
+            combined_faked_data = {}
+            if (
+                home_faked_data["avg_lat"] is not None
+                and away_faked_data["avg_lat"] is not None
+            ):
+                combined_faked_data["avg_lat"] = (
+                    home_faked_data["avg_lat"] + away_faked_data["avg_lat"]
+                ) / 2
+                combined_faked_data["avg_lon"] = (
+                    home_faked_data["avg_lon"] + away_faked_data["avg_lon"]
+                ) / 2
+            else:
+                combined_faked_data["avg_lat"] = (
+                    home_faked_data["avg_lat"] or away_faked_data["avg_lat"]
+                )
+                combined_faked_data["avg_lon"] = (
+                    home_faked_data["avg_lon"] or away_faked_data["avg_lon"]
+                )
+
+            if (
+                home_faked_data["avg_attendance"] is not None
+                and away_faked_data["avg_attendance"] is not None
+            ):
+                combined_faked_data["avg_attendance"] = (
+                    home_faked_data["avg_attendance"]
+                    + away_faked_data["avg_attendance"]
+                ) / 2
+            else:
+                combined_faked_data["avg_attendance"] = (
+                    home_faked_data["avg_attendance"]
+                    or away_faked_data["avg_attendance"]
+                )
+
+            if (
+                home_faked_data["avg_timestamp"] is not None
+                and away_faked_data["avg_timestamp"] is not None
+            ):
+                combined_faked_data["avg_timestamp"] = (
+                    home_faked_data["avg_timestamp"] + away_faked_data["avg_timestamp"]
+                ) / 2
+            else:
+                combined_faked_data["avg_timestamp"] = (
+                    home_faked_data["avg_timestamp"] or away_faked_data["avg_timestamp"]
+                )
+
+            # Perform final reverse geocoding and formatting
+            faked_location_address = "N/A"
+            if (
+                combined_faked_data["avg_lat"] is not None
+                and combined_faked_data["avg_lon"] is not None
+            ):
+                # First, try to find a nearby stadium
+                print(
+                    f"Searching for nearby stadiums for {combined_faked_data['avg_lat']}, {combined_faked_data['avg_lon']}"
+                )
+                nearby_stadiums = geocoder.find_nearby_stadiums(
+                    combined_faked_data["avg_lat"], combined_faked_data["avg_lon"]
+                )
+
+                chosen_stadium = None
+                for stadium in nearby_stadiums:
+                    if stadium["name"] != "Unnamed Stadium":
+                        chosen_stadium = stadium
+                        break
+                import json
+
+                print("CHOSEN STADIUM")
+                print(json.dumps(chosen_stadium))
+
+                if chosen_stadium:
+                    try:
+                        # Reverse geocode the stadium's coordinates to get city/state
+                        stadium_reverse_location = geocoder.reverse_geocode(
+                            chosen_stadium["lat"],
+                            chosen_stadium["lon"],
+                        )
+                        if stadium_reverse_location:
+                            state = stadium_reverse_location.raw["address"]["state"]
+                            faked_location_address = (
+                                f"{chosen_stadium['name']}, {state}"
+                            )
+                        else:
+                            faked_location_address = f"{chosen_stadium['name']}"
+                    except Exception as e:
+                        print(f"Error during reverse geocoding for chosen stadium: {e}")
+                        faked_location_address = f"{chosen_stadium['name']}"
+                        # faked_location_address = f"{chosen_stadium['name']} (Lat: {chosen_stadium['lat']:.4f}, Lon: {chosen_stadium['lon']:.4f})"
+                else:
+                    # Fallback to reverse geocoding if no named stadium is found
+                    try:
+                        reverse_location = geocoder.reverse_geocode(
+                            combined_faked_data["avg_lat"],
+                            combined_faked_data["avg_lon"],
+                        )
+                        if reverse_location:
+                            faked_location_address = f"{reverse_location.raw['name']}, {reverse_location.raw['address']['state']}"
+                    except Exception as e:
+                        print(f"Error during reverse geocoding for matchup: {e}")
+
+            faked_date = "N/A"
+            if combined_faked_data["avg_timestamp"] is not None:
+                faked_date = datetime.fromtimestamp(
+                    combined_faked_data["avg_timestamp"]
+                ).strftime("%Y-%m-%d")
+
+            faked_attendance = "N/A"
+            if combined_faked_data["avg_attendance"] is not None:
+                faked_attendance = round(combined_faked_data["avg_attendance"])
+
+            matchup["faked_matchup_data"] = {
+                "location": faked_location_address,
+                "date": faked_date,
+                "attendance": faked_attendance,
+            }
         # Prepare template context
         context = {
             "year": self.year,
