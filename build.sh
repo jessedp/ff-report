@@ -54,7 +54,7 @@ if [ "$MODE" == "build" ]; then
     if [ -n "$WEEK" ]; then # If WEEK is provided, generate a single report
         echo "--- Generating BUILD report for Week $WEEK, Year $YEAR ---"
         # OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
-        python3 -m ff --verbose weekly --year $YEAR --week $WEEK
+        uv run python3 -m ff --verbose weekly --year $YEAR --week $WEEK
     else # If WEEK is not provided, generate all reports (placeholder for now)
         echo "--- Generating ALL reports for Year $YEAR (Not yet implemented) ---"
     fi
@@ -64,7 +64,7 @@ if [ "$MODE" == "build" ]; then
 else # preview mode
     echo "--- Generating PREVIEW report for Week $WEEK, Year $YEAR ---"
     OUTPUT_FILE="$DEST_DIR/reports/${YEAR}-week${WEEK}.html"
-    python3 -m ff --verbose weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
+    uv run python3 -m ff --verbose weekly --year $YEAR --week $WEEK --output $OUTPUT_FILE --force
 fi
 
 # 3. Copy common assets
@@ -83,7 +83,7 @@ if [ "$MODE" == "build" ] && [ -n "$WEEK" ]; then
     LLM_SUMMARY_FILE="$SUMMARY_SRC_DIR/${YEAR}-week${WEEK}_llm_summary.md"
     if [ ! -f "$LLM_SUMMARY_FILE" ]; then
         echo "--- LLM Summary for Week $WEEK not found, generating... ---"
-        python3 -m ff.llm_report --week $WEEK --year $YEAR --llm-provider $LLM_PROVIDER
+        uv run python3 -m ff.llm_report --week $WEEK --year $YEAR --llm-provider $LLM_PROVIDER
     else
         echo "--- LLM Summary for Week $WEEK already exists. ---"
     fi
@@ -113,7 +113,7 @@ if [ -d "$SUMMARY_SRC_DIR" ] && [ "$(ls -A "$SUMMARY_SRC_DIR")" ]; then
                     html_filename=$(basename "${md_file%.md}.html")
                     html_filepath="$DEST_DIR/reports/summaries/$html_filename"
                     link_text=$html_filename
-                    python3 -m ff.build_summary "$md_file" "$link_text" > "$html_filepath"
+                    uv run python3 -m ff.build_summary "$md_file" "$link_text" > "$html_filepath"
                     SUMMARY_LINKS_HTML="${SUMMARY_LINKS_HTML}<li><a href='summaries/$html_filename'>${link_text}</a></li>"
                 done
             fi
@@ -122,7 +122,7 @@ if [ -d "$SUMMARY_SRC_DIR" ] && [ "$(ls -A "$SUMMARY_SRC_DIR")" ]; then
                 html_filename="prompt.html"
                 html_filepath="$DEST_DIR/reports/summaries/$html_filename"
                 link_text="prompt.txt"
-                python3 -m ff.build_summary "prompt.txt" "$link_text" > "$html_filepath"
+                uv run python3 -m ff.build_summary "prompt.txt" "$link_text" > "$html_filepath"
                 SUMMARY_LINKS_HTML="${SUMMARY_LINKS_HTML}<li><a href='summaries/$html_filename'>${link_text}</a></li>"
             fi
 
@@ -160,9 +160,9 @@ fi
 # 6. Generate index
 echo "--- Generating reports index ---"
 if [ "$MODE" == "preview" ]; then
-    python3 build_index.py $DEST_DIR/reports $DEST_DIR/reports.json
+    uv run python3 build_index.py $DEST_DIR/reports $DEST_DIR/reports.json
 else # build
-    python3 build_index.py
+    uv run python3 build_index.py
     mv reports.json $DEST_DIR/
 fi
 
@@ -172,7 +172,7 @@ if [ "$MODE" == "preview" ]; then
     echo "Preview for week $WEEK is ready in the '$DEST_DIR' directory."
     SERVER_PID=""
     if ! lsof -i:8000 -sTCP:LISTEN -t >/dev/null; then
-        (cd $DEST_DIR && python3 -m http.server 8000) &
+        (cd $DEST_DIR && uv run python3 -m http.server 8000) &
         SERVER_PID=$!
         echo "Server started with PID $SERVER_PID."
     else

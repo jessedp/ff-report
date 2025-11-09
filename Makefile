@@ -18,7 +18,7 @@ llm:
 		echo "Please specify a week, e.g., make llm WEEK=3"; \
 		exit 1; \
 	fi
-	python -m ff.llm_report --week $(WEEK)
+	uv run python -m ff.llm_report --week $(WEEK)
 
 # Preview a weekly report
 # Usage: make preview WEEK=3
