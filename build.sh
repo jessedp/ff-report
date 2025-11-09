@@ -7,6 +7,7 @@ set -e
 PREVIEW_DEST_DIR="preview"
 BUILD_DEST_DIR="dist"
 SUMMARY_SRC_DIR="reports/llm_summary"
+LLM_PROVIDER="gemini"
 
 # --- Argument Parsing ---
 MODE="preview"
@@ -82,7 +83,7 @@ if [ "$MODE" == "build" ] && [ -n "$WEEK" ]; then
     LLM_SUMMARY_FILE="$SUMMARY_SRC_DIR/${YEAR}-week${WEEK}_llm_summary.md"
     if [ ! -f "$LLM_SUMMARY_FILE" ]; then
         echo "--- LLM Summary for Week $WEEK not found, generating... ---"
-        python3 -m ff.llm_report --week $WEEK --year $YEAR
+        python3 -m ff.llm_report --week $WEEK --year $YEAR --llm-provider $LLM_PROVIDER
     else
         echo "--- LLM Summary for Week $WEEK already exists. ---"
     fi

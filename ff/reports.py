@@ -431,9 +431,12 @@ class WeeklyReport:
         all_players = self.data.get_weekly_players(week)
         for player in all_players:
             player["team_logo"] = cache_logo(player["team_logo"])
-            player["pro_team_logo"] = cache_logo(
-                f"images/logo_svg/{player['pro_team']}.svg"
-            )
+            if player["pro_team"] and player["pro_team"] != "None":
+                player["pro_team_logo"] = cache_logo(
+                    f"images/logo_svg/{player['pro_team']}.svg"
+                )
+            else:
+                player["pro_team_logo"] = None
             # Add game data for the player's pro team
             player["game_data"] = pro_team_game_data.get(player["pro_team"], [])
 

@@ -1,3 +1,24 @@
+[project]
+name = "ff"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.14.2",
+    "black>=25.9.0",
+    "click>=8.3.0",
+    "espn-api>=0.45.1",
+    "geopy>=2.4.1",
+    "google-genai>=1.49.0",
+    "jinja2>=3.1.6",
+    "openai>=2.7.1",
+    "pyobjson>=6.2.1",
+    "python-dotenv>=1.2.1",
+    "requests>=2.32.5",
+    "tornado>=6.5.2",
+]
+
 [tool.basedpyright]
 include = ["ff"]
 

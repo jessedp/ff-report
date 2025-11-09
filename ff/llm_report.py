@@ -11,7 +11,7 @@ import datetime  # Added datetime for timestamps
 import argparse  # Added argparse
 from dotenv import load_dotenv
 import openai
-import google.generativeai as genai  # Added google.generativeai
+from google import genai
 from ff.game_summary import generate_summary, generate_simplified_summary
 from ff.data import LeagueData
 from ff.config import LEAGUE_YEAR
@@ -69,7 +69,7 @@ class GeminiProvider(LLMProvider):
     """An implementation of LLMProvider for Google Gemini models."""
 
     def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
-        genai.configure(api_key=api_key)
+        self.client = genai.Client(api_key=api_key)
         self.model = model
 
     def generate_report(self, prompt_data: dict) -> str:
@@ -84,17 +84,18 @@ class GeminiProvider(LLMProvider):
             f"## Historical Data\n\n{prompt_data.get('historical', '')}"
         )
 
-        # Gemini API typically takes a list of messages, similar to OpenAI
-        # System prompt is usually the first user message, followed by a model response
-        messages = [
-            {"role": "user", "parts": [system_prompt]},
-            {"role": "model", "parts": ["Okay, I understand. How can I help?"]},
-            {"role": "user", "parts": [user_content]},
+        # The new API uses a different structure for messages
+        contents = [
+            system_prompt,
+            "Okay, I understand. How can I help?",
+            user_content,
         ]
 
         try:
-            model = genai.GenerativeModel(self.model)
-            response = model.generate_content(messages)
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=contents,
+            )
             return response.text
         except Exception as e:
             return f"Error generating report from Gemini: {e}"
@@ -240,13 +241,13 @@ def main(week: int, year: int, llm_provider_name: str, force: bool, preview: boo
     print(llm_report)
 
     # Save the report to file
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") # Removed timestamp
     report_filename_base = f"{year}-week{week}_llm_summary"
 
-    # ./reports/llm_summary/YYYY-week(X)_llm_summary_{datetime}.md
+    # ./reports/llm_summary/YYYY-week(X)_llm_summary.md
     summary_dir = "reports/llm_summary"
     os.makedirs(summary_dir, exist_ok=True)
-    report_path = os.path.join(summary_dir, f"{report_filename_base}_{timestamp}.md")
+    report_path = os.path.join(summary_dir, f"{report_filename_base}.md")
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(llm_report)
     logging.info(f"LLM report saved to {report_path}")
