@@ -124,7 +124,7 @@ class LeagueData:
             week = self.get_current_week()
 
         box_scores = self.get_box_scores(week)
-        free_agents = self.league.free_agents(week=week, size=50)
+        free_agents = self.league.free_agents(week=week, size=200)
 
         all_players = []
 
@@ -177,6 +177,9 @@ class LeagueData:
                     "team_name": "Free Agent",
                     "team_abbrev": "FA",
                     "team_logo": "images/logo_svg/NFL.svg",
+                    "points_breakdown": player.points_breakdown if hasattr(player, 'points_breakdown') else {},
+                    "projected_points_breakdown": player.projected_points_breakdown if hasattr(player, 'projected_points_breakdown') else {},
+                    "projected_points": player.projected_points if hasattr(player, 'projected_points') else 0.0,
                 }
             )
 

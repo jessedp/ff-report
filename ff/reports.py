@@ -7,6 +7,7 @@ import urllib.request
 import shutil
 from datetime import timedelta, datetime
 from pathlib import Path
+import json
 from .data import LeagueData
 from .stat_category_map import STAT_CATEGORY_LOOKUP
 from espn_api.football.constant import SETTINGS_SCORING_FORMAT_MAP, PLAYER_STATS_MAP
@@ -558,18 +559,23 @@ class WeeklyReport:
         team_name_to_object = {team.team_name: team for team in self.data.league.teams}
 
         for player in all_players:
-            if player["team_abbrev"] != "FA":
-                team_name = player["team_name"]
-                if team_name not in players_by_team:
-                    players_by_team[team_name] = {
-                        "team_object": team_name_to_object.get(
-                            team_name
-                        ),  # Add the Team object here
-                        "players": [],
-                        "grouped_points_breakdown": {},
-                        "detailed_points_breakdown": [],
-                    }
-                players_by_team[team_name]["players"].append(player)
+            team_name = player["team_name"]
+            if team_name not in players_by_team:
+                players_by_team[team_name] = {
+                    "team_object": (
+                        team_name_to_object.get(team_name)
+                        if team_name != "Free Agent"
+                        else None
+                    ),
+                    "players": [],
+                    "grouped_points_breakdown": {},
+                    "detailed_points_breakdown": [],
+                }
+            players_by_team[team_name]["players"].append(player)
+
+        # Exclude "Free Agent" team from further processing for display in "Points Per Player Breakdown"
+        if "Free Agent" in players_by_team:
+            del players_by_team["Free Agent"]
 
         # Process stats for each player and sort
         stat_name_to_id_map = {v: int(k) for k, v in PLAYER_STATS_MAP.items()}
@@ -1155,8 +1161,6 @@ class WeeklyReport:
                     if stadium["name"] != "Unnamed Stadium":
                         chosen_stadium = stadium
                         break
-                import json
-
                 print("CHOSEN STADIUM")
                 print(json.dumps(chosen_stadium))
 
