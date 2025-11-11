@@ -14,6 +14,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "openai>=2.7.1",
     "pyobjson>=6.2.1",
+    "pypandoc>=1.16",
     "python-dotenv>=1.2.1",
     "requests>=2.32.5",
     "tornado>=6.5.2",
@@ -25,3 +26,6 @@ include = ["ff"]
 reportAny = false
 reportExplicitAny = false
 reportUnknownVariableType = false
+
+[tool.uv.sources]
+espn-api = { git = "https://github.com/cwendt94/espn-api" }
