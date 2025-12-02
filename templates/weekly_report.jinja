@@ -2,7 +2,7 @@
 
 {% macro player_section(players, section_title, slot_filter, no_data_message) %}
     <div class="sub-section-title"{% if section_title == 'Bench' %} style="margin-top: 2em;"{% endif %}>{{ section_title }}</div>
-    {% for player in players if (slot_filter == 'ne' and player.slot_position != 'BE') or (slot_filter == 'eq' and player.slot_position == 'BE') %}
+    {% for player in players if (slot_filter == 'ne' and player.slot_position != 'BE' and player.slot_position != 'IR') or (slot_filter == 'eq' and (player.slot_position == 'BE' or player.slot_position == 'IR')) %}
         <div class="player-breakdown">
         <div class="player-info">
             <div class="player-details-line">

@@ -546,7 +546,7 @@ class WeeklyReport:
 
         def get_player_sort_key(player):
             slot = player["slot_position"]
-            if slot == "BE":
+            if slot == "BE" or slot == "IR":
                 return (1, 0)  # Bench players last
             try:
                 return (0, pos_order.index(slot))
@@ -655,7 +655,7 @@ class WeeklyReport:
 
             for player in team_all_players:
                 if (
-                    player["slot_position"] == "BE"
+                    player["slot_position"] == "BE"  or player["slot_position"] == "IR"
                 ):  # Only consider starters for team breakdown
                     continue
                 if "points_breakdown" in player and player["points_breakdown"]:
@@ -898,7 +898,7 @@ class WeeklyReport:
         stat_name_to_id_map = {v: k for k, v in PLAYER_STATS_MAP.items()}
         aggregated_points_by_id = {}
         for player in all_players:
-            if player["team_abbrev"] == "FA" or player["slot_position"] == "BE":
+            if player["team_abbrev"] == "FA" or player["slot_position"] == "BE" or player["slot_position"] == "IR":
                 continue
             if "points_breakdown" in player and player["points_breakdown"]:
                 for stat_name, points in player["points_breakdown"].items():
