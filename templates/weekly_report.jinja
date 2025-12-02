@@ -379,6 +379,52 @@
     </table>
 </div>
 
+<!-- Touchdowns! Section -->
+<div class="section">
+    <div class="section-title">Touchdowns!</div>
+    <hr>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="text-center">#</th>
+                <th class="text-center">Tot</th>
+                <th class="text-center">Rush</th>
+                <th class="text-center">Recv</th>
+                <th class="text-center">Pass</th>
+                <th class="text-center">Def</th>
+                <th class="text-center">?</th>
+                <th class="text-center">Div</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in touchdown_standings %}
+            <tr>
+                <td class="text-center">{{ loop.index }}</td>
+                <td class="text-center"><strong>{{ team.total }}</strong></td>
+                <td class="text-center">{{ team.rush }}</td>
+                <td class="text-center">{{ team.recv }}</td>
+                <td class="text-center">{{ team.pass }}</td>
+                <td class="text-center" 
+                    {% if team.def > 0 %}
+                    title="{% for k, v in team.def_breakdown.items() if v > 0 %}{{ k }}: {{ v }}{% if not loop.last %}, {% endif %}{% endfor %}"
+                    {% endif %}
+                >{{ team.def }}</td>
+                <td class="text-center">
+                    {% if team.won %}
+                        <span class="result-win">W</span>
+                    {% else %}
+                        <span class="result-loss">L</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ div_images[team.division]|safe }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ team.logo }}' /> </span>{{ team.name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
 
 <!-- Demographics Section -->
 <div class="section">
@@ -824,6 +870,8 @@
 
     });
 </script>
+
+
 
 <!-- Player Stats Section -->
 <div class="section">

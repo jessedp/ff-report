@@ -1073,6 +1073,104 @@ class WeeklyReport:
             ],
         }
 
+        # --- Touchdowns Calculation ---
+        scoring_format = self.data.league.settings.scoring_format
+        stat_name_to_id = {v: k for k, v in PLAYER_STATS_MAP.items()}
+        stat_points_map = {}
+        for item in scoring_format:
+            stat_id = item['id']
+            points = item['points']
+            if stat_id in PLAYER_STATS_MAP:
+                stat_name = PLAYER_STATS_MAP[stat_id]
+                stat_points_map[stat_name] = points
+
+        td_categories = {
+            "pass": ["passingTouchdowns"],
+            "rush": ["rushingTouchdowns"],
+            "recv": ["receivingTouchdowns"],
+            "def": [
+                "kickoffReturnTouchdowns",
+                "puntReturnTouchdowns",
+                "interceptionReturnTouchdowns",
+                "fumbleReturnTouchdowns",
+                "fumbleRecoveredForTD",
+                "defensiveBlockedKickForTouchdowns"
+            ]
+        }
+
+        # Helper map for weekly scores to get logo and division easily
+        team_info_map = {score['name']: score for score in weekly_scores}
+
+        touchdown_standings = []
+
+        for team_name, team_data in players_by_team.items():
+            td_stats = {
+                "name": team_name,
+                "pass": 0, "rush": 0, "recv": 0, "def": 0, "total": 0,
+                "def_breakdown": {
+                    "defensiveBlockedKickForTouchdowns": 0,
+                    "fumbleReturnTouchdowns": 0,
+                    "fumbleRecoveredForTD": 0,
+                    "interceptionReturnTouchdowns": 0,
+                    "puntReturnTouchdowns": 0,
+                    "kickoffReturnTouchdowns": 0
+                }
+            }
+            
+            # Get logo and division from weekly_scores map
+            if team_name in team_info_map:
+                info = team_info_map[team_name]
+                td_stats['logo'] = info['logo']
+                td_stats['division'] = info['division']
+                td_stats['won'] = info['won'] # Reuse for '?' column
+            else:
+                 # Fallback
+                td_stats['logo'] = team_data["players"][0]["team_logo"]
+                td_stats['division'] = "Unknown"
+                td_stats['won'] = False
+
+            for player in team_data["players"]:
+                # Only Starters
+                if player['slot_position'] in ['BE', 'IR']:
+                    continue
+
+                breakdown = player.get('points_breakdown', {})
+                for cat_type, stat_names in td_categories.items():
+                    for stat_name in stat_names:
+                        if stat_name in breakdown:
+                            points = breakdown[stat_name]
+                            pts_per_unit = stat_points_map.get(stat_name)
+                            if pts_per_unit:
+                                count = int(round(points / pts_per_unit))
+                                td_stats[cat_type] += count
+                                td_stats["total"] += count
+                                
+                                if cat_type == "def" and stat_name in td_stats["def_breakdown"]:
+                                    td_stats["def_breakdown"][stat_name] += count
+            
+            touchdown_standings.append(td_stats)
+
+        # Sort: Total DESC > Def DESC > Rush DESC > Recv DESC > Pass DESC
+        # Tie breaker for Def: BLKKRTD > FRTD/FTD > INTTD > PRTD > KRTD
+        def td_sort_key(item):
+            primary = (
+                item['total'],
+                item['def'],
+                item['rush'],
+                item['recv'],
+                item['pass']
+            )
+            def_sub = (
+                item['def_breakdown']['defensiveBlockedKickForTouchdowns'],
+                item['def_breakdown']['fumbleReturnTouchdowns'] + item['def_breakdown']['fumbleRecoveredForTD'],
+                item['def_breakdown']['interceptionReturnTouchdowns'],
+                item['def_breakdown']['puntReturnTouchdowns'],
+                item['def_breakdown']['kickoffReturnTouchdowns']
+            )
+            return primary + def_sub
+
+        touchdown_standings.sort(key=td_sort_key, reverse=True)
+
         # Calculate faked location, time, and attendance for each matchup
         for matchup in matchups:
             home_team_name = matchup["home_team"]["name"]
@@ -1246,6 +1344,7 @@ class WeeklyReport:
             "beef_rankings": beef_rankings,
             "zodiac_radar_chart_data": zodiac_radar_chart_data,
             "zodiac_pie_chart_data": zodiac_pie_chart_data,
+            "touchdown_standings": touchdown_standings,
             "zodiac_names": {
                 "♈": "Aries",
                 "♉": "Taurus",
