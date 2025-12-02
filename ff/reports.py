@@ -967,6 +967,9 @@ class WeeklyReport:
             "datasets": radar_datasets,
         }
 
+        # Helper map for weekly scores to get logo and division easily
+        team_info_map = {score['name']: score for score in weekly_scores}
+
         # --- Beef Rankings ---
         beef_rankings = []
         for team_name, team_data in players_by_team.items():
@@ -983,12 +986,18 @@ class WeeklyReport:
             total_tabbu = total_weight / 500.0
 
             if total_tabbu > 0:
+                # Get win status from team_info_map
+                won = False
+                if team_name in team_info_map:
+                    won = team_info_map[team_name]['won']
+
                 beef_rankings.append(
                     {
                         "team_name": team_name,
                         "team_logo": team_data["players"][0]["team_logo"],
                         "total_weight": total_weight,
                         "total_tabbu": total_tabbu,
+                        "won": won,
                     }
                 )
 

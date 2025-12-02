@@ -155,8 +155,8 @@ class BaseFeature(ABC, FFMWRPythonObjectJson):
         else:
             # Only print debug info for beef feature failures
             if self.feature_type_str == "beef":
-                print(f"DEBUG: BEEF MISMATCH for player '{player_full_name}'")
-                print(f"  -> Generated Key: '{normalized_player_key}'")
+                # print(f"DEBUG: BEEF MISMATCH for player '{player_full_name}'")
+                # print(f"  -> Generated Key: '{normalized_player_key}'")
                 if player_last_name:
                     potential_matches = [
                         k

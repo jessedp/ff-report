@@ -575,6 +575,7 @@
             <tr>
                 <th class="text-center">#</th>
                 <th>Team</th>
+                <th class="text-center">?</th>
                 <th class="text-right">Weight</th>
                 <th>TABBU</th>
             </tr>
@@ -584,6 +585,13 @@
             <tr>
                 <td class="text-center">{{ team.rank }}</td>
                 <td><span class="logo-container-sm"><img class='logo' src='{{ team.team_logo }}' /> </span>{{ team.team_name }}</td>
+                <td class="text-center">
+                    {% if team.won %}
+                        <span class="result-win">W</span>
+                    {% else %}
+                        <span class="result-loss">L</span>
+                    {% endif %}
+                </td>
                 <td class="text-right">{{ team.total_weight|round(1) }} lbs</td>
                 <td class="tabbu-emojis">{{ team.tabbu_emojis }} <span class="tabbu-score">({{ team.total_tabbu|round(2) }})</span></td>
             </tr>
