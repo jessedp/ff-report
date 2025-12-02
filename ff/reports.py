@@ -1107,10 +1107,18 @@ class WeeklyReport:
             ]
         }
 
+        two_point_categories = {
+            "pass": {"stats": ["passing2PtConversions"], "icon": "🚀", "label": "Passing"},
+            "rush": {"stats": ["rushing2PtConversions"], "icon": "🦿", "label": "Rushing"},
+            "recv": {"stats": ["receiving2PtConversions"], "icon": "🦾", "label": "Receiving"},
+            "ret": {"stats": ["defensive2PtReturns", "2PtReturns"], "icon": "🤯", "label": "Return"}
+        }
+
         # Helper map for weekly scores to get logo and division easily
         team_info_map = {score['name']: score for score in weekly_scores}
 
         touchdown_standings = []
+        two_point_conversions = []
 
         for team_name, team_data in players_by_team.items():
             td_stats = {
@@ -1132,11 +1140,13 @@ class WeeklyReport:
                 td_stats['logo'] = info['logo']
                 td_stats['division'] = info['division']
                 td_stats['won'] = info['won'] # Reuse for '?' column
+                team_logo = info['logo']
             else:
                  # Fallback
                 td_stats['logo'] = team_data["players"][0]["team_logo"]
                 td_stats['division'] = "Unknown"
                 td_stats['won'] = False
+                team_logo = team_data["players"][0]["team_logo"]
 
             for player in team_data["players"]:
                 # Only Starters
@@ -1144,6 +1154,8 @@ class WeeklyReport:
                     continue
 
                 breakdown = player.get('points_breakdown', {})
+                
+                # Touchdowns
                 for cat_type, stat_names in td_categories.items():
                     for stat_name in stat_names:
                         if stat_name in breakdown:
@@ -1156,7 +1168,32 @@ class WeeklyReport:
                                 
                                 if cat_type == "def" and stat_name in td_stats["def_breakdown"]:
                                     td_stats["def_breakdown"][stat_name] += count
-            
+
+                # 2 Point Conversions
+                for cat_key, cat_info in two_point_categories.items():
+                    for stat_name in cat_info["stats"]:
+                        if stat_name in breakdown:
+                             # 2PT conversions are usually 2 points, but let's check map just in case
+                             # If not in map, assume it happened if points > 0
+                             points = breakdown[stat_name]
+                             pts_per_unit = stat_points_map.get(stat_name, 2.0) 
+                             count = int(round(points / pts_per_unit))
+                             
+                             if count > 0:
+                                 # For each occurrence (though usually 1 per player per type per game max)
+                                 for _ in range(count):
+                                     two_point_conversions.append({
+                                         "type_icon": cat_info["icon"],
+                                         "type_label": cat_info["label"],
+                                         "player_name": player["name"],
+                                         "player_pos": player["position"],
+                                         "player_pro_team": player["pro_team"],
+                                         "team_name": team_name,
+                                         "team_logo": team_logo,
+                                         # Sort helpers
+                                         "cat_sort": cat_key 
+                                     })
+
             touchdown_standings.append(td_stats)
 
         # Sort: Total DESC > Def DESC > Rush DESC > Recv DESC > Pass DESC
@@ -1179,6 +1216,19 @@ class WeeklyReport:
             return primary + def_sub
 
         touchdown_standings.sort(key=td_sort_key, reverse=True)
+        
+        # Sort 2 Point Conversions: 
+        # "Total by team" - interpreted as grouping by team and sorting by total count descending.
+        # Then "2PTRET, Rushing, Receiving, Passing"
+        
+        cat_priority = {"ret": 0, "rush": 1, "recv": 2, "pass": 3}
+        
+        # Calculate total conversions per team
+        team_conversion_counts = {}
+        for conv in two_point_conversions:
+            team_conversion_counts[conv['team_name']] = team_conversion_counts.get(conv['team_name'], 0) + 1
+            
+        two_point_conversions.sort(key=lambda x: (-team_conversion_counts[x['team_name']], cat_priority.get(x['cat_sort'], 99)))
 
         # Calculate faked location, time, and attendance for each matchup
         for matchup in matchups:
@@ -1354,6 +1404,7 @@ class WeeklyReport:
             "zodiac_radar_chart_data": zodiac_radar_chart_data,
             "zodiac_pie_chart_data": zodiac_pie_chart_data,
             "touchdown_standings": touchdown_standings,
+            "two_point_conversions": two_point_conversions,
             "zodiac_names": {
                 "♈": "Aries",
                 "♉": "Taurus",

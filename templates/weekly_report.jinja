@@ -425,6 +425,36 @@
     </table>
 </div>
 
+<!-- 2 Point Conversions Section -->
+<div class="section">
+    <div class="section-title">2 Point Conversions</div>
+    <hr>
+    {% if two_point_conversions %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Pos.</th>
+                <th>Player</th>
+                <th>Team</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for conversion in two_point_conversions %}
+            <tr>
+                <td title="{{ conversion.type_label }}">{{ conversion.type_icon }} {{ conversion.type_label }}</td>
+                <td>{{ conversion.player_pos }}</td>
+                <td><img src="logo_svg/{{ conversion.player_pro_team }}.svg" class="nfl-logo" />{{ conversion.player_name }}</td>
+                <td><span class="logo-container-sm"><img class='logo' src='{{ conversion.team_logo }}' /> </span>{{ conversion.team_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>🙁 No Successful conversions this week</p>
+    {% endif %}
+</div>
+
 
 <!-- Demographics Section -->
 <div class="section">
@@ -878,6 +908,8 @@
 
     });
 </script>
+
+
 
 
 
