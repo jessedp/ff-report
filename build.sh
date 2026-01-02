@@ -22,7 +22,18 @@ else # build mode
     DEST_DIR=$BUILD_DEST_DIR
 fi
 
-YEAR=$(date +%Y)
+# Determine default year (prioritize .env, then intelligent guess)
+if [ -f .env ] && grep -q "^LEAGUE_YEAR" .env; then
+    YEAR=$(grep "^LEAGUE_YEAR" .env | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+else
+    # Fallback: If current month is before September (09), assume previous year's season
+    if [ "$(date +%m)" -lt "09" ]; then
+        YEAR=$(( $(date +%Y) - 1 ))
+    else
+        YEAR=$(date +%Y)
+    fi
+fi
+
 WEEK=""
 # Simple parsing for --week and --year
 while [[ $# -gt 0 ]]; do
